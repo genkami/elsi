@@ -12,6 +12,8 @@ func main() {
 	actions := []func() error{
 		doPing,
 		doAdd,
+		doDiv(14, 7),
+		doDiv(15, 0),
 	}
 
 	for _, action := range actions {
@@ -95,6 +97,63 @@ func doAdd() error {
 	}
 	fmt.Fprintf(os.Stderr, "add: OK\n")
 	return nil
+}
+
+func doDiv(x, y int64) func() error {
+	return func() error {
+		var err error
+
+		enc := message.NewEncoder()
+		err = enc.EncodeBytes([]byte("elsi.x.div"))
+		if err != nil {
+			return err
+		}
+		err = enc.EncodeInt64(x)
+		if err != nil {
+			return err
+		}
+		err = enc.EncodeInt64(y)
+		if err != nil {
+			return err
+		}
+
+		err = sendReq(enc.Buffer())
+		if err != nil {
+			return err
+		}
+		dec, err := receiveResp()
+		if err != nil {
+			return err
+		}
+
+		vtag, err := dec.DecodeVariant()
+		if err != nil {
+			return err
+		}
+
+		switch vtag {
+		case 0:
+			sum, err := dec.DecodeInt64()
+			if err != nil {
+				return err
+			}
+
+			if sum != x/y {
+				return fmt.Errorf("%d / %d should be %d but got %d", x, y, x/y, sum)
+			}
+		case 1:
+			code, err := dec.DecodeUint64()
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "div: error (code = %X)\n", code)
+		default:
+			return fmt.Errorf("unknown variant: %d", vtag)
+		}
+
+		fmt.Fprintf(os.Stderr, "div: OK\n")
+		return nil
+	}
 }
 
 func sendReq(req []byte) error {

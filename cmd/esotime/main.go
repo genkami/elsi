@@ -13,6 +13,7 @@ import (
 var methodsMap = map[string]func(*message.Decoder) ([]byte, error){
 	"elsi.x.ping": ping,
 	"elsi.x.add":  add,
+	"elsi.x.div":  div,
 }
 
 func usage() {
@@ -118,7 +119,7 @@ func dispatchRequest(dec *message.Decoder) ([]byte, error) {
 	return method(dec)
 }
 
-// ping(nonce: int32) -> int32 | error
+// ping(nonce: int64) -> int64
 func ping(dec *message.Decoder) ([]byte, error) {
 	enc := message.NewEncoder()
 	nonce, err := dec.DecodeInt64()
@@ -132,7 +133,7 @@ func ping(dec *message.Decoder) ([]byte, error) {
 	return enc.Buffer(), nil
 }
 
-// add(x: int32, y: int32) -> int32 | error
+// add(x: int64, y: int64) -> int64
 func add(dec *message.Decoder) ([]byte, error) {
 	enc := message.NewEncoder()
 	x, err := dec.DecodeInt64()
@@ -144,6 +145,40 @@ func add(dec *message.Decoder) ([]byte, error) {
 		return nil, err
 	}
 	err = enc.EncodeInt64(x + y)
+	if err != nil {
+		return nil, err
+	}
+	return enc.Buffer(), nil
+}
+
+// div(x: int32, y: int32) -> int64 | error:uint64
+func div(dec *message.Decoder) ([]byte, error) {
+	enc := message.NewEncoder()
+	x, err := dec.DecodeInt64()
+	if err != nil {
+		return nil, err
+	}
+	y, err := dec.DecodeInt64()
+	if err != nil {
+		return nil, err
+	}
+	if y == 0 {
+		err = enc.EncodeVariant(1)
+		if err != nil {
+			return nil, err
+		}
+		// ZeroDivisionError
+		err = enc.EncodeUint64(0xababcdcd)
+		if err != nil {
+			return nil, err
+		}
+		return enc.Buffer(), nil
+	}
+	err = enc.EncodeVariant(0)
+	if err != nil {
+		return nil, err
+	}
+	err = enc.EncodeInt64(x / y)
 	if err != nil {
 		return nil, err
 	}
