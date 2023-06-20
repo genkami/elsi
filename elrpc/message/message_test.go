@@ -24,6 +24,23 @@ func TestDecoder_DecodeInt64(t *testing.T) {
 	}
 }
 
+func TestDecoder_DecodeUint64(t *testing.T) {
+	buf := []byte{
+		0x02,                                           // type tag (uint64)
+		0xf2, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
+	}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeUint64()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want uint64 = 0xf23456789abcdef1
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
 func TestDecoder_DecodeBytes(t *testing.T) {
 	buf := []byte{
 		0x01,                                           // type tag (bytes)
@@ -37,6 +54,23 @@ func TestDecoder_DecodeBytes(t *testing.T) {
 	}
 
 	want := []byte("Hello")
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeVariant(t *testing.T) {
+	buf := []byte{
+		0x03, // type tag (variant)
+		0xab, // value
+	}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeVariant()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want uint8 = 0xab
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
@@ -59,6 +93,23 @@ func TestEncoder_EncodeInt64(t *testing.T) {
 	}
 }
 
+func TestEncoder_EncodeUint64(t *testing.T) {
+	enc := message.NewEncoder()
+	err := enc.EncodeUint64(0xfa2b3c4d5e6f7a8b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []byte{
+		0x02,                                           // type tag (uint64)
+		0xfa, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x7a, 0x8b, // value
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
 func TestEncoder_EncodeBytes(t *testing.T) {
 	enc := message.NewEncoder()
 	err := enc.EncodeBytes([]byte("Konnichiwa"))
@@ -70,6 +121,23 @@ func TestEncoder_EncodeBytes(t *testing.T) {
 		0x01,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, // length = 10
 		0x4b, 0x6f, 0x6e, 0x6e, 0x69, 0x63, 0x68, 0x69, 0x77, 0x61, // value = "Konnichiwa"
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestEncoder_EncodeVariant(t *testing.T) {
+	enc := message.NewEncoder()
+	err := enc.EncodeVariant(0xef)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []byte{
+		0x03, // type tag (variant)
+		0xef, // value
 	}
 	got := enc.Buffer()
 	if diff := cmp.Diff(want, got); diff != "" {
