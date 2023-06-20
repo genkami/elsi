@@ -1,12 +1,19 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"sync"
+
+	"github.com/genkami/elsi/elrpc/message"
 )
+
+var methodsMap = map[string]func(*message.Decoder) ([]byte, error){
+	"elsi.x.ping": ping,
+	"elsi.x.add":  add,
+}
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: esotime run CMD...\n")
@@ -36,30 +43,109 @@ func main() {
 		panic(err)
 	}
 
-	buf := make([]byte, 256)
-	_, err = io.ReadFull(stdout, buf[:1])
-	if err != nil {
-		panic(err)
-	}
-	size := int(buf[0])
-	_, err = io.ReadFull(stdout, buf[:size])
-	if err != nil {
-		panic(err)
-	}
-	if !bytes.Equal(buf[:size], []byte("Ping")) {
-		panic(fmt.Sprintf("Protocol error: %v", buf[:size]))
-	}
+	var wg sync.WaitGroup
 
-	wbuf := []byte("\x04Pong")
-	_, err = stdin.Write(wbuf)
-	if err != nil {
-		panic(err)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := serverWorker(stdout, stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "worker error: %s\n", err.Error())
+		}
+	}()
 
 	err = cmd.Wait()
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Fprintf(os.Stderr, "esotime: waiting worker goroutine to finish...\n")
+	wg.Wait()
+
 	fmt.Fprintf(os.Stderr, "esotime: OK\n")
+}
+
+func serverWorker(stdout io.Reader, stdin io.Writer) error {
+	var err error
+	for {
+		rlenBuf := make([]byte, message.LengthSize)
+		_, err = io.ReadFull(stdout, rlenBuf)
+		if err != nil {
+			return err
+		}
+		length, err := message.DecodeLength(rlenBuf)
+		if err != nil {
+			return err
+		}
+
+		req := make([]byte, length)
+		_, err = io.ReadFull(stdout, req)
+		if err != nil {
+			return err
+		}
+		dec := message.NewDecoder(req)
+
+		resp, err := dispatchRequest(dec)
+		if err != nil {
+			return err
+		}
+
+		wlenBuf, err := message.AppendLength(nil, len(resp))
+		if err != nil {
+			return err
+		}
+		_, err = stdin.Write(wlenBuf)
+		if err != nil {
+			return err
+		}
+
+		_, err = stdin.Write(resp)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func dispatchRequest(dec *message.Decoder) ([]byte, error) {
+	methodName, err := dec.DecodeBytes()
+	if err != nil {
+		return nil, err
+	}
+	method, ok := methodsMap[string(methodName)]
+	if !ok {
+		return nil, fmt.Errorf("no such method: %s", string(methodName))
+	}
+	return method(dec)
+}
+
+// ping(nonce: int32) -> int32 | error
+func ping(dec *message.Decoder) ([]byte, error) {
+	enc := message.NewEncoder()
+	nonce, err := dec.DecodeInt64()
+	if err != nil {
+		return nil, err
+	}
+	err = enc.EncodeInt64(nonce)
+	if err != nil {
+		return nil, err
+	}
+	return enc.Buffer(), nil
+}
+
+// add(x: int32, y: int32) -> int32 | error
+func add(dec *message.Decoder) ([]byte, error) {
+	enc := message.NewEncoder()
+	x, err := dec.DecodeInt64()
+	if err != nil {
+		return nil, err
+	}
+	y, err := dec.DecodeInt64()
+	if err != nil {
+		return nil, err
+	}
+	err = enc.EncodeInt64(x + y)
+	if err != nil {
+		return nil, err
+	}
+	return enc.Buffer(), nil
 }
