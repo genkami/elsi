@@ -50,7 +50,8 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := serverWorker(stdout, stdin)
+		strm := &pipeStream{Writer: stdin, Reader: stdout}
+		err := serverWorker(strm)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "worker error: %s\n", err.Error())
 		}
@@ -67,11 +68,20 @@ func main() {
 	fmt.Fprintf(os.Stderr, "esotime: OK\n")
 }
 
-func serverWorker(stdout io.Reader, stdin io.Writer) error {
+type Stream interface {
+	io.ReadWriter
+}
+
+type pipeStream struct {
+	io.Reader
+	io.Writer
+}
+
+func serverWorker(strm Stream) error {
 	var err error
 	for {
 		rlenBuf := make([]byte, message.LengthSize)
-		_, err = io.ReadFull(stdout, rlenBuf)
+		_, err = io.ReadFull(strm, rlenBuf)
 		if err != nil {
 			return err
 		}
@@ -81,7 +91,7 @@ func serverWorker(stdout io.Reader, stdin io.Writer) error {
 		}
 
 		req := make([]byte, length)
-		_, err = io.ReadFull(stdout, req)
+		_, err = io.ReadFull(strm, req)
 		if err != nil {
 			return err
 		}
@@ -96,12 +106,12 @@ func serverWorker(stdout io.Reader, stdin io.Writer) error {
 		if err != nil {
 			return err
 		}
-		_, err = stdin.Write(wlenBuf)
+		_, err = strm.Write(wlenBuf)
 		if err != nil {
 			return err
 		}
 
-		_, err = stdin.Write(resp)
+		_, err = strm.Write(resp)
 		if err != nil {
 			return err
 		}
