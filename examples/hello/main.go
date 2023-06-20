@@ -14,6 +14,7 @@ func main() {
 		doAdd,
 		doDiv(14, 7),
 		doDiv(15, 0),
+		doWriteFile,
 	}
 
 	for _, action := range actions {
@@ -154,6 +155,59 @@ func doDiv(x, y int64) func() error {
 		fmt.Fprintf(os.Stderr, "div: OK\n")
 		return nil
 	}
+}
+
+func doWriteFile() error {
+	var err error
+	enc := message.NewEncoder()
+	err = enc.EncodeBytes([]byte("elsi.x.write_file"))
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeUint64(1)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeBytes([]byte("Hello from ELSI!"))
+	if err != nil {
+		return err
+	}
+
+	err = sendReq(enc.Buffer())
+	if err != nil {
+		return err
+	}
+
+	dec, err := receiveResp()
+	if err != nil {
+		return err
+	}
+
+	vtag, err := dec.DecodeVariant()
+	if err != nil {
+		return err
+	}
+
+	switch vtag {
+	case 0:
+		nwritten, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(os.Stderr, "%d bytes written\n", nwritten)
+	case 1:
+		code, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "writeFile: error (code = %X)\n", code)
+	default:
+		return fmt.Errorf("unknown variant: %d", vtag)
+	}
+
+	fmt.Fprintf(os.Stderr, "writeFile: OK\n")
+	return nil
 }
 
 func sendReq(req []byte) error {

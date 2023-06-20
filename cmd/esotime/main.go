@@ -11,9 +11,10 @@ import (
 )
 
 var methodsMap = map[string]func(*message.Decoder) ([]byte, error){
-	"elsi.x.ping": ping,
-	"elsi.x.add":  add,
-	"elsi.x.div":  div,
+	"elsi.x.ping":       ping,
+	"elsi.x.add":        add,
+	"elsi.x.div":        div,
+	"elsi.x.write_file": writeFile,
 }
 
 func usage() {
@@ -151,7 +152,7 @@ func add(dec *message.Decoder) ([]byte, error) {
 	return enc.Buffer(), nil
 }
 
-// div(x: int32, y: int32) -> int64 | error:uint64
+// div(x: int32, y: int32) -> result: int64 | error: uint64
 func div(dec *message.Decoder) ([]byte, error) {
 	enc := message.NewEncoder()
 	x, err := dec.DecodeInt64()
@@ -179,6 +180,34 @@ func div(dec *message.Decoder) ([]byte, error) {
 		return nil, err
 	}
 	err = enc.EncodeInt64(x / y)
+	if err != nil {
+		return nil, err
+	}
+	return enc.Buffer(), nil
+}
+
+// write_file(handle: uint64, buf: bytes) -> nwritten: uint64 | error: uint64
+func writeFile(dec *message.Decoder) ([]byte, error) {
+	enc := message.NewEncoder()
+	_, err := dec.DecodeUint64()
+	if err != nil {
+		return nil, err
+	}
+	buf, err := dec.DecodeBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	nwritten, err := os.Stdout.Write(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	err = enc.EncodeVariant(0)
+	if err != nil {
+		return nil, err
+	}
+	err = enc.EncodeUint64(uint64(nwritten))
 	if err != nil {
 		return nil, err
 	}
