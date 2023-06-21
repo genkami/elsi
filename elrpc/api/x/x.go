@@ -2,23 +2,22 @@ package x
 
 import (
 	"github.com/genkami/elsi/elrpc"
-	"github.com/genkami/elsi/elrpc/api/std"
 )
 
 // TODO is an experimental interface that should be removed.
 type TODO interface {
 	Ping(*PingRequest) *PingResponse
 	Add(*AddRequest) *AddResponse
-	Div(*DivRequest) *std.Either[*DivResponse, *std.Error]
-	WriteFile(*WriteFileRequest) *std.Either[*WriteFileResponse, *std.Error]
+	Div(*DivRequest) *elrpc.Either[*DivResponse, *elrpc.Error]
+	WriteFile(*WriteFileRequest) *elrpc.Either[*WriteFileResponse, *elrpc.Error]
 }
 
 func NewWorld(todo TODO) *elrpc.World {
 	imports := map[string]elrpc.Handler{
 		"elsi.x.ping":       elrpc.TypedHandlerFunc[*PingRequest, *PingResponse](todo.Ping),
 		"elsi.x.add":        elrpc.TypedHandlerFunc[*AddRequest, *AddResponse](todo.Add),
-		"elsi.x.div":        elrpc.TypedHandlerFunc[*DivRequest, *std.Either[*DivResponse, *std.Error]](todo.Div),
-		"elsi.x.write_file": elrpc.TypedHandlerFunc[*WriteFileRequest, *std.Either[*WriteFileResponse, *std.Error]](todo.WriteFile),
+		"elsi.x.div":        elrpc.TypedHandlerFunc[*DivRequest, *elrpc.Either[*DivResponse, *elrpc.Error]](todo.Div),
+		"elsi.x.write_file": elrpc.TypedHandlerFunc[*WriteFileRequest, *elrpc.Either[*WriteFileResponse, *elrpc.Error]](todo.WriteFile),
 	}
 	return elrpc.NewWorld(imports)
 }

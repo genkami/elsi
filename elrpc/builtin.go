@@ -1,18 +1,16 @@
-package std
+package elrpc
 
 import (
 	"fmt"
-
-	"github.com/genkami/elsi/elrpc"
 )
 
-type Either[T, U elrpc.Message] struct {
+type Either[T, U Message] struct {
 	IsOk bool
 	Ok   T
 	Err  U
 }
 
-func (e *Either[T, U]) UnmarshalELRPC(dec *elrpc.Decoder) error {
+func (e *Either[T, U]) UnmarshalELRPC(dec *Decoder) error {
 	vtag, err := dec.DecodeVariant()
 	if err != nil {
 		return err
@@ -43,7 +41,7 @@ func (e *Either[T, U]) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	}
 }
 
-func (e *Either[T, U]) MarshalELRPC(enc *elrpc.Encoder) error {
+func (e *Either[T, U]) MarshalELRPC(enc *Encoder) error {
 	var err error
 	if e.IsOk {
 		err = enc.EncodeVariant(0)
@@ -68,7 +66,7 @@ func (e *Either[T, U]) MarshalELRPC(enc *elrpc.Encoder) error {
 	}
 }
 
-func (e *Either[T, U]) ZeroMessage() elrpc.Message {
+func (e *Either[T, U]) ZeroMessage() Message {
 	return &Either[T, U]{}
 }
 
@@ -77,7 +75,7 @@ type Error struct {
 	// TODO: add message?
 }
 
-func (e *Error) UnmarshalELRPC(dec *elrpc.Decoder) error {
+func (e *Error) UnmarshalELRPC(dec *Decoder) error {
 	code, err := dec.DecodeUint64()
 	if err != nil {
 		return err
@@ -86,7 +84,7 @@ func (e *Error) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	return nil
 }
 
-func (e *Error) MarshalELRPC(enc *elrpc.Encoder) error {
+func (e *Error) MarshalELRPC(enc *Encoder) error {
 	err := enc.EncodeUint64(e.Code)
 	if err != nil {
 		return err
@@ -94,6 +92,6 @@ func (e *Error) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (e *Error) ZeroMessage() elrpc.Message {
+func (e *Error) ZeroMessage() Message {
 	return &Error{}
 }

@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/genkami/elsi/elrpc"
-	"github.com/genkami/elsi/elrpc/api/std"
 	"github.com/genkami/elsi/elrpc/api/x"
 )
 
@@ -55,12 +54,12 @@ func (*todoImpl) Add(req *x.AddRequest) *x.AddResponse {
 	}
 }
 
-func (*todoImpl) Div(req *x.DivRequest) *std.Either[*x.DivResponse, *std.Error] {
-	type Resp = std.Either[*x.DivResponse, *std.Error]
+func (*todoImpl) Div(req *x.DivRequest) *elrpc.Either[*x.DivResponse, *elrpc.Error] {
+	type Resp = elrpc.Either[*x.DivResponse, *elrpc.Error]
 	if req.Y == 0 {
 		return &Resp{
 			IsOk: false,
-			Err: &std.Error{
+			Err: &elrpc.Error{
 				Code: 0xababcdcd,
 			},
 		}
@@ -73,13 +72,13 @@ func (*todoImpl) Div(req *x.DivRequest) *std.Either[*x.DivResponse, *std.Error] 
 	}
 }
 
-func (*todoImpl) WriteFile(req *x.WriteFileRequest) *std.Either[*x.WriteFileResponse, *std.Error] {
-	type Resp = std.Either[*x.WriteFileResponse, *std.Error]
+func (*todoImpl) WriteFile(req *x.WriteFileRequest) *elrpc.Either[*x.WriteFileResponse, *elrpc.Error] {
+	type Resp = elrpc.Either[*x.WriteFileResponse, *elrpc.Error]
 	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
 		return &Resp{
 			IsOk: false,
-			Err: &std.Error{
+			Err: &elrpc.Error{
 				Code: 0x12345,
 			},
 		}
