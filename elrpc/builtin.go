@@ -4,6 +4,27 @@ import (
 	"fmt"
 )
 
+type Bytes struct {
+	Value []byte
+}
+
+func (b *Bytes) UnmarshalELRPC(dec *Decoder) error {
+	val, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	b.Value = val
+	return nil
+}
+
+func (b *Bytes) MarshalELRPC(enc *Encoder) error {
+	return enc.EncodeBytes(b.Value)
+}
+
+func (b *Bytes) ZeroMessage() Message {
+	return &Bytes{}
+}
+
 type Void struct{}
 
 func (Void) UnmarshalELRPC(dec *Decoder) error {
