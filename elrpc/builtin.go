@@ -85,13 +85,13 @@ func (o *Option[T]) MarshalELRPC(enc *Encoder) error {
 	}
 }
 
-type Either[T, U Message] struct {
+type Result[T, U Message] struct {
 	IsOk bool
 	Ok   T
 	Err  U
 }
 
-func (e *Either[T, U]) UnmarshalELRPC(dec *Decoder) error {
+func (e *Result[T, U]) UnmarshalELRPC(dec *Decoder) error {
 	vtag, err := dec.DecodeVariant()
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (e *Either[T, U]) UnmarshalELRPC(dec *Decoder) error {
 	}
 }
 
-func (e *Either[T, U]) MarshalELRPC(enc *Encoder) error {
+func (e *Result[T, U]) MarshalELRPC(enc *Encoder) error {
 	var err error
 	if e.IsOk {
 		err = enc.EncodeVariant(0)
@@ -147,8 +147,8 @@ func (e *Either[T, U]) MarshalELRPC(enc *Encoder) error {
 	}
 }
 
-func (e *Either[T, U]) ZeroMessage() Message {
-	return &Either[T, U]{}
+func (e *Result[T, U]) ZeroMessage() Message {
+	return &Result[T, U]{}
 }
 
 const (
@@ -285,16 +285,16 @@ func (m *MethodResult) ZeroMessage() Message {
 }
 
 type Exporter interface {
-	PollMethodCall() *Either[*MethodCall, *Error]
-	SendResult(*MethodResult) *Either[*Void, *Error]
+	PollMethodCall() *Result[*MethodCall, *Error]
+	SendResult(*MethodResult) *Result[*Void, *Error]
 }
 
 // The world that every ELRPC instance should use.
 // This is automatically registered by system.
 func newBuiltinWorld(e Exporter) *World {
 	imports := map[string]Handler{
-		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*Either[*MethodCall, *Error]](e.PollMethodCall),
-		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Either[*Void, *Error]](e.SendResult),
+		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*Result[*MethodCall, *Error]](e.PollMethodCall),
+		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Result[*Void, *Error]](e.SendResult),
 	}
 	return NewWorld(imports)
 }

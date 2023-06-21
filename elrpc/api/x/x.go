@@ -8,16 +8,16 @@ import (
 type TODO interface {
 	Ping(*PingRequest) *PingResponse
 	Add(*AddRequest) *AddResponse
-	Div(*DivRequest) *elrpc.Either[*DivResponse, *elrpc.Error]
-	WriteFile(*WriteFileRequest) *elrpc.Either[*WriteFileResponse, *elrpc.Error]
+	Div(*DivRequest) *elrpc.Result[*DivResponse, *elrpc.Error]
+	WriteFile(*WriteFileRequest) *elrpc.Result[*WriteFileResponse, *elrpc.Error]
 }
 
 func NewWorld(todo TODO) *elrpc.World {
 	imports := map[string]elrpc.Handler{
 		"elsi.x.ping":       elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping),
 		"elsi.x.add":        elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add),
-		"elsi.x.div":        elrpc.TypedHandler1[*DivRequest, *elrpc.Either[*DivResponse, *elrpc.Error]](todo.Div),
-		"elsi.x.write_file": elrpc.TypedHandler1[*WriteFileRequest, *elrpc.Either[*WriteFileResponse, *elrpc.Error]](todo.WriteFile),
+		"elsi.x.div":        elrpc.TypedHandler1[*DivRequest, *elrpc.Result[*DivResponse, *elrpc.Error]](todo.Div),
+		"elsi.x.write_file": elrpc.TypedHandler1[*WriteFileRequest, *elrpc.Result[*WriteFileResponse, *elrpc.Error]](todo.WriteFile),
 	}
 	return elrpc.NewWorld(imports)
 }

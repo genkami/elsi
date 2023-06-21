@@ -401,8 +401,8 @@ func (e *exporterImpl) callAsync(call *MethodCall) <-chan callResult {
 	return ch
 }
 
-func (e *exporterImpl) PollMethodCall() *Either[*MethodCall, *Error] {
-	type Resp = Either[*MethodCall, *Error]
+func (e *exporterImpl) PollMethodCall() *Result[*MethodCall, *Error] {
+	type Resp = Result[*MethodCall, *Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
@@ -421,8 +421,8 @@ func (e *exporterImpl) PollMethodCall() *Either[*MethodCall, *Error] {
 	}
 }
 
-func (e *exporterImpl) SendResult(m *MethodResult) *Either[*Void, *Error] {
-	type Resp = Either[*Void, *Error]
+func (e *exporterImpl) SendResult(m *MethodResult) *Result[*Void, *Error] {
+	type Resp = Result[*Void, *Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.ID]

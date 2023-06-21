@@ -54,8 +54,8 @@ func (*todoImpl) Add(req *x.AddRequest) *x.AddResponse {
 	}
 }
 
-func (*todoImpl) Div(req *x.DivRequest) *elrpc.Either[*x.DivResponse, *elrpc.Error] {
-	type Resp = elrpc.Either[*x.DivResponse, *elrpc.Error]
+func (*todoImpl) Div(req *x.DivRequest) *elrpc.Result[*x.DivResponse, *elrpc.Error] {
+	type Resp = elrpc.Result[*x.DivResponse, *elrpc.Error]
 	if req.Y == 0 {
 		return &Resp{
 			IsOk: false,
@@ -72,8 +72,8 @@ func (*todoImpl) Div(req *x.DivRequest) *elrpc.Either[*x.DivResponse, *elrpc.Err
 	}
 }
 
-func (*todoImpl) WriteFile(req *x.WriteFileRequest) *elrpc.Either[*x.WriteFileResponse, *elrpc.Error] {
-	type Resp = elrpc.Either[*x.WriteFileResponse, *elrpc.Error]
+func (*todoImpl) WriteFile(req *x.WriteFileRequest) *elrpc.Result[*x.WriteFileResponse, *elrpc.Error] {
+	type Resp = elrpc.Result[*x.WriteFileResponse, *elrpc.Error]
 	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
 		return &Resp{
