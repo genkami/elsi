@@ -176,3 +176,88 @@ func (a *Any) MarshalELRPC(enc *Encoder) error {
 func (a *Any) ZeroMessage() Message {
 	return &Any{}
 }
+
+type MethodCall struct {
+	ID   uint64
+	Name []byte
+	Args *Any
+}
+
+func (m *MethodCall) UnmarshalELRPC(dec *Decoder) error {
+	id, err := dec.DecodeUint64()
+	if err != nil {
+		return err
+	}
+	name, err := dec.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	args, err := dec.DecodeAny()
+	if err != nil {
+		return err
+	}
+	m.ID = id
+	m.Name = name
+	m.Args = args
+	return nil
+}
+
+func (m *MethodCall) MarshalELRPC(enc *Encoder) error {
+	err := enc.EncodeUint64(m.ID)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeBytes(m.Name)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeAny(m.Args)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MethodCall) ZeroMessage() Message {
+	return &MethodCall{}
+}
+
+type MethodResult struct {
+	ID     uint64
+	RetVal *Any
+}
+
+func (m *MethodResult) UnmarshalELRPC(dec *Decoder) error {
+	id, err := dec.DecodeUint64()
+	if err != nil {
+		return err
+	}
+	ret, err := dec.DecodeAny()
+	if err != nil {
+		return err
+	}
+	m.ID = id
+	m.RetVal = ret
+	return nil
+}
+
+func (m *MethodResult) MarshalELRPC(enc *Encoder) error {
+	err := enc.EncodeUint64(m.ID)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeAny(m.RetVal)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MethodResult) ZeroMessage() Message {
+	return &MethodResult{}
+}
+
+type Exporter interface {
+	PollMethodCall() *Either[*MethodCall, *Error]
+	SendResult(*MethodResult) *Either[*Void, *Error]
+}
