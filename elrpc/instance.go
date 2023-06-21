@@ -9,26 +9,27 @@ import (
 )
 
 type Handler interface {
-	// TODO: this is not necessary
-	DecodeRequest(*Decoder) (Message, error)
-	HandleRequest(Message) Message
+	HandleRequest(*Decoder) ([]byte, error)
 }
 
 // TODO: make TypedFunc0, ..., TypedFunc5
 type TypedHandlerFunc[Req, Resp Message] func(Req) Resp
 
-func (h TypedHandlerFunc[Req, Resp]) DecodeRequest(dec *Decoder) (Message, error) {
-	var z Req
-	req := z.ZeroMessage()
+func (h TypedHandlerFunc[Req, Resp]) HandleRequest(dec *Decoder) ([]byte, error) {
+	req := NewMessage[Req]()
 	err := req.UnmarshalELRPC(dec)
 	if err != nil {
 		return nil, err
 	}
-	return req, nil
-}
 
-func (h TypedHandlerFunc[Req, Resp]) HandleRequest(req Message) Message {
-	return h(req.(Req))
+	resp := h(req.(Req))
+
+	enc := NewEncoder()
+	err = resp.MarshalELRPC(enc)
+	if err != nil {
+		return nil, err
+	}
+	return enc.Buffer(), nil
 }
 
 type World struct {
@@ -199,15 +200,9 @@ func (instance *Instance) dispatchRequest(dec *Decoder) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("no such method: %s", string(methodName))
 	}
-	req, err := handler.DecodeRequest(dec)
+	resp, err := handler.HandleRequest(dec)
 	if err != nil {
 		return nil, err
 	}
-	resp := handler.HandleRequest(req)
-	enc := NewEncoder()
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return nil, err
-	}
-	return enc.Buffer(), nil
+	return resp, nil
 }
