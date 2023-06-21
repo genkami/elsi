@@ -14,10 +14,10 @@ type TODO interface {
 
 func NewWorld(todo TODO) *elrpc.World {
 	imports := map[string]elrpc.Handler{
-		"elsi.x.ping":       elrpc.TypedHandlerFunc[*PingRequest, *PingResponse](todo.Ping),
-		"elsi.x.add":        elrpc.TypedHandlerFunc[*AddRequest, *AddResponse](todo.Add),
-		"elsi.x.div":        elrpc.TypedHandlerFunc[*DivRequest, *elrpc.Either[*DivResponse, *elrpc.Error]](todo.Div),
-		"elsi.x.write_file": elrpc.TypedHandlerFunc[*WriteFileRequest, *elrpc.Either[*WriteFileResponse, *elrpc.Error]](todo.WriteFile),
+		"elsi.x.ping":       elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping),
+		"elsi.x.add":        elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add),
+		"elsi.x.div":        elrpc.TypedHandler1[*DivRequest, *elrpc.Either[*DivResponse, *elrpc.Error]](todo.Div),
+		"elsi.x.write_file": elrpc.TypedHandler1[*WriteFileRequest, *elrpc.Either[*WriteFileResponse, *elrpc.Error]](todo.WriteFile),
 	}
 	return elrpc.NewWorld(imports)
 }
