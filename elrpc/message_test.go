@@ -77,6 +77,32 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 	}
 }
 
+func TestDecoder_DecodeAny(t *testing.T) {
+	buf := []byte{
+		0x04,                                           // type tag (any)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
+		0x00,                                           // type tag (int64)
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value
+	}
+
+	dec := elrpc.NewDecoder(buf)
+	any, err := dec.DecodeAny()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	anyDec := elrpc.NewDecoder(any.Raw)
+	got, err := anyDec.DecodeInt64()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want int64 = 0x1122334455667788
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
 func TestEncoder_EncodeInt64(t *testing.T) {
 	enc := elrpc.NewEncoder()
 	err := enc.EncodeInt64(0x1a2b3c4d5e6f7a8b)
@@ -139,6 +165,32 @@ func TestEncoder_EncodeVariant(t *testing.T) {
 	want := []byte{
 		0x03, // type tag (variant)
 		0xef, // value
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestEncoder_EncodeAny(t *testing.T) {
+	anyEnc := elrpc.NewEncoder()
+	err := anyEnc.EncodeBytes([]byte("Yo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	enc := elrpc.NewEncoder()
+	err = enc.EncodeAny(&elrpc.Any{Raw: anyEnc.Buffer()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []byte{
+		0x04,                                           // type tag (any)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b, // length = ?
+		0x01,                                           // type tag (bytes)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length =2
+		0x59, 0x6f, // value
 	}
 	got := enc.Buffer()
 	if diff := cmp.Diff(want, got); diff != "" {

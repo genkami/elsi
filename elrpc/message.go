@@ -21,12 +21,17 @@ import (
 //             where
 //               XX = 8-bit unsigned integer
 //               YY .. YY = variable-length ELRPC message object
+// Any:        0x04 XX XX XX XX XX XX XX XX YY .. YY
+//             where
+//               XX .. XX = 64-bit big-endian integer (length)
+//               YY .. YY = variable-length byte array representing another message
 
 const (
 	TagInt64   = 0x00
 	TagBytes   = 0x01
 	TagUint64  = 0x02
 	TagVariant = 0x03
+	TagAny     = 0x04
 )
 
 var (
@@ -124,6 +129,27 @@ func (d *Decoder) DecodeVariant() (uint8, error) {
 	return val, nil
 }
 
+func (d *Decoder) DecodeAny() (*Any, error) {
+	if len(d.buf) < 1 {
+		return nil, ErrInsufficientBuf
+	}
+	if d.buf[0] != TagAny {
+		return nil, ErrTypeMismatch
+	}
+	length, err := DecodeLength(d.buf[1:])
+	if err != nil {
+		return nil, err
+	}
+
+	d.buf = d.buf[1+LengthSize:]
+	if len(d.buf) < length {
+		return nil, ErrInsufficientBuf
+	}
+	val := d.buf[:length]
+	d.buf = d.buf[length:]
+	return &Any{Raw: val}, nil
+}
+
 type Encoder struct {
 	buf []byte
 }
@@ -155,6 +181,13 @@ func (e *Encoder) EncodeBytes(val []byte) error {
 
 func (e *Encoder) EncodeVariant(val uint8) error {
 	e.buf = append(e.buf, TagVariant, val)
+	return nil
+}
+
+func (e *Encoder) EncodeAny(val *Any) error {
+	e.buf = append(e.buf, TagAny)
+	e.buf = endian.AppendUint64(e.buf, uint64(len(val.Raw)))
+	e.buf = append(e.buf, val.Raw...)
 	return nil
 }
 

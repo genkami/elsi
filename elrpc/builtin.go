@@ -1,7 +1,6 @@
 package elrpc
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -157,23 +156,23 @@ func (e *Error) ZeroMessage() Message {
 	return &Error{}
 }
 
-type AnyTuple []Message
-
-func (t AnyTuple) UnmarshalELRPC(dec *Decoder) error {
-	// TODO: this sould be unmarshalable
-	return errors.New("unmarshaling AnyTuple is not allowed")
+type Any struct {
+	Raw []byte
 }
 
-func (t AnyTuple) MarshalELRPC(enc *Encoder) error {
-	for _, m := range t {
-		err := m.MarshalELRPC(enc)
-		if err != nil {
-			return err
-		}
+func (a *Any) UnmarshalELRPC(dec *Decoder) error {
+	b, err := dec.DecodeAny()
+	if err != nil {
+		return err
 	}
+	a.Raw = b.Raw
 	return nil
 }
 
-func (t AnyTuple) ZeroMessage() Message {
-	return AnyTuple{}
+func (a *Any) MarshalELRPC(enc *Encoder) error {
+	return enc.EncodeAny(a)
+}
+
+func (a *Any) ZeroMessage() Message {
+	return &Any{}
 }
