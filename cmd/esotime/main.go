@@ -2,27 +2,25 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
-	"sync"
 
 	"github.com/genkami/elsi/elrpc"
 )
 
-var methodsMap map[string]AnyHandler
+var theWorld *elrpc.World
 
 func init() {
-	methodsMap = map[string]AnyHandler{}
-	handlers := []AnyHandler{
-		&PingHandler,
-		&AddHandler,
-		&DivHandler,
-		&WriteFileHandler,
+	w := elrpc.NewWorld()
+	handlers := map[string]elrpc.AnyHandler{
+		"elsi.x.ping":       &PingHandler,
+		"elsi.x.add":        &AddHandler,
+		"elsi.x.div":        &DivHandler,
+		"elsi.x.write_file": &WriteFileHandler,
 	}
-	for _, h := range handlers {
-		methodsMap[h.MethodName()] = h
+	for name, h := range handlers {
+		w.Register(name, h)
 	}
+	theWorld = w
 }
 
 func usage() {
@@ -38,152 +36,24 @@ func main() {
 	if args[1] != "run" {
 		usage()
 	}
-	cmd := exec.Command(args[2], args[3:]...)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		panic(err)
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
-	cmd.Stderr = os.Stderr
-	err = cmd.Start()
+
+	mod := elrpc.NewProcessModule(args[2], args[3:]...)
+	instance := elrpc.NewInstance(mod)
+	instance.Use(theWorld)
+	err := instance.Start()
 	if err != nil {
 		panic(err)
 	}
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		strm := &pipeStream{Writer: stdin, Reader: stdout}
-		err := serverWorker(strm)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "worker error: %s\n", err.Error())
-		}
-	}()
-
-	err = cmd.Wait()
+	err = instance.Wait()
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Fprintf(os.Stderr, "esotime: waiting worker goroutine to finish...\n")
-	wg.Wait()
 
 	fmt.Fprintf(os.Stderr, "esotime: OK\n")
 }
 
-type Stream interface {
-	io.ReadWriter
-}
-
-type pipeStream struct {
-	io.Reader
-	io.Writer
-}
-
-type AnyHandler interface {
-	MethodName() string
-	DecodeRequest(*elrpc.Decoder) (Message, error)
-	HandleRequest(Message) Message
-}
-
-type Message interface {
-	elrpc.Unmarshaler
-	elrpc.Marshaler
-	ZeroMessage() Message
-}
-
-type Handler[Req, Resp Message] struct {
-	Name string
-	Impl func(Req) Resp
-}
-
-func (h *Handler[Req, Resp]) MethodName() string {
-	return h.Name
-}
-
-func (h *Handler[Req, Resp]) DecodeRequest(dec *elrpc.Decoder) (Message, error) {
-	var z Req
-	req := z.ZeroMessage()
-	err := req.UnmarshalELRPC(dec)
-	if err != nil {
-		return nil, err
-	}
-	return req, nil
-}
-
-func (h *Handler[Req, Resp]) HandleRequest(req Message) Message {
-	return h.Impl(req.(Req))
-}
-
-func serverWorker(strm Stream) error {
-	var err error
-	for {
-		rlenBuf := make([]byte, elrpc.LengthSize)
-		_, err = io.ReadFull(strm, rlenBuf)
-		if err != nil {
-			return err
-		}
-		length, err := elrpc.DecodeLength(rlenBuf)
-		if err != nil {
-			return err
-		}
-
-		req := make([]byte, length)
-		_, err = io.ReadFull(strm, req)
-		if err != nil {
-			return err
-		}
-		dec := elrpc.NewDecoder(req)
-
-		resp, err := dispatchRequest(dec)
-		if err != nil {
-			return err
-		}
-
-		wlenBuf, err := elrpc.AppendLength(nil, len(resp))
-		if err != nil {
-			return err
-		}
-		_, err = strm.Write(wlenBuf)
-		if err != nil {
-			return err
-		}
-
-		_, err = strm.Write(resp)
-		if err != nil {
-			return err
-		}
-	}
-}
-
-func dispatchRequest(dec *elrpc.Decoder) ([]byte, error) {
-	methodName, err := dec.DecodeBytes()
-	if err != nil {
-		return nil, err
-	}
-	handler, ok := methodsMap[string(methodName)]
-	if !ok {
-		return nil, fmt.Errorf("no such method: %s", string(methodName))
-	}
-	req, err := handler.DecodeRequest(dec)
-	if err != nil {
-		return nil, err
-	}
-	resp := handler.HandleRequest(req)
-	enc := elrpc.NewEncoder()
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return nil, err
-	}
-	return enc.Buffer(), nil
-}
-
-type Either[T, U Message] struct {
+type Either[T, U elrpc.Message] struct {
 	IsOk bool
 	Ok   T
 	Err  U
@@ -245,7 +115,7 @@ func (e *Either[T, U]) MarshalELRPC(enc *elrpc.Encoder) error {
 	}
 }
 
-func (e *Either[T, U]) ZeroMessage() Message {
+func (e *Either[T, U]) ZeroMessage() elrpc.Message {
 	return &Either[T, U]{}
 }
 
@@ -271,7 +141,7 @@ func (e *Error) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (e *Error) ZeroMessage() Message {
+func (e *Error) ZeroMessage() elrpc.Message {
 	return &Error{}
 }
 
@@ -292,7 +162,7 @@ func (r *PingRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("PingRequest.MarshalELRPC: TODO")
 }
 
-func (r *PingRequest) ZeroMessage() Message {
+func (r *PingRequest) ZeroMessage() elrpc.Message {
 	return &PingRequest{}
 }
 
@@ -312,7 +182,7 @@ func (r *PingResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (r *PingResponse) ZeroMessage() Message {
+func (r *PingResponse) ZeroMessage() elrpc.Message {
 	return &PingResponse{}
 }
 
@@ -322,7 +192,7 @@ func pingImpl(req *PingRequest) *PingResponse {
 	}
 }
 
-var PingHandler = Handler[*PingRequest, *PingResponse]{
+var PingHandler = elrpc.Handler[*PingRequest, *PingResponse]{
 	Name: "elsi.x.ping",
 	Impl: pingImpl,
 }
@@ -349,7 +219,7 @@ func (r *AddRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("AddRequest.MarshalELRPC: TODO")
 }
 
-func (r *AddRequest) ZeroMessage() Message {
+func (r *AddRequest) ZeroMessage() elrpc.Message {
 	return &AddRequest{}
 }
 
@@ -369,7 +239,7 @@ func (r *AddResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (r *AddResponse) ZeroMessage() Message {
+func (r *AddResponse) ZeroMessage() elrpc.Message {
 	return &AddResponse{}
 }
 
@@ -379,7 +249,7 @@ func addImpl(req *AddRequest) *AddResponse {
 	}
 }
 
-var AddHandler = Handler[*AddRequest, *AddResponse]{
+var AddHandler = elrpc.Handler[*AddRequest, *AddResponse]{
 	Name: "elsi.x.add",
 	Impl: addImpl,
 }
@@ -406,7 +276,7 @@ func (r *DivRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("DivRequest.MarshalELRPC: TODO")
 }
 
-func (r *DivRequest) ZeroMessage() Message {
+func (r *DivRequest) ZeroMessage() elrpc.Message {
 	return &DivRequest{}
 }
 
@@ -426,7 +296,7 @@ func (r *DivResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (r *DivResponse) ZeroMessage() Message {
+func (r *DivResponse) ZeroMessage() elrpc.Message {
 	return &DivResponse{}
 }
 
@@ -447,7 +317,7 @@ func divImpl(req *DivRequest) *Either[*DivResponse, *Error] {
 	}
 }
 
-var DivHandler = Handler[*DivRequest, *Either[*DivResponse, *Error]]{
+var DivHandler = elrpc.Handler[*DivRequest, *Either[*DivResponse, *Error]]{
 	Name: "elsi.x.div",
 	Impl: divImpl,
 }
@@ -475,7 +345,7 @@ func (r *WriteFileRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("WriteFileRequest.MarshalELRPC: TODO")
 }
 
-func (r *WriteFileRequest) ZeroMessage() Message {
+func (r *WriteFileRequest) ZeroMessage() elrpc.Message {
 	return &WriteFileRequest{}
 }
 
@@ -496,7 +366,7 @@ func (r *WriteFileResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	return nil
 }
 
-func (r *WriteFileResponse) ZeroMessage() Message {
+func (r *WriteFileResponse) ZeroMessage() elrpc.Message {
 	return &WriteFileResponse{}
 }
 
@@ -519,7 +389,7 @@ func writeFileImpl(req *WriteFileRequest) *Either[*WriteFileResponse, *Error] {
 	}
 }
 
-var WriteFileHandler = Handler[*WriteFileRequest, *Either[*WriteFileResponse, *Error]]{
+var WriteFileHandler = elrpc.Handler[*WriteFileRequest, *Either[*WriteFileResponse, *Error]]{
 	Name: "elsi.x.write_file",
 	Impl: writeFileImpl,
 }

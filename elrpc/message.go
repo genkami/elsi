@@ -169,3 +169,9 @@ type Marshaler interface {
 type Unmarshaler interface {
 	UnmarshalELRPC(*Decoder) error
 }
+
+type Message interface {
+	Unmarshaler
+	Marshaler
+	ZeroMessage() Message
+}
