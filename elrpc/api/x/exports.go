@@ -13,6 +13,7 @@ type GreeterClient struct {
 var _ Greeter = &GreeterClient{}
 
 // TODO: handler functions should return error
+// -> Or we can let every methods have Result<_, Error> as a return value.
 // TODO: elrpc.Handler should have HandleImport and HandleExport
 func (g *GreeterClient) Greet(name *elrpc.Bytes) *elrpc.Bytes {
 	enc := elrpc.NewEncoder()

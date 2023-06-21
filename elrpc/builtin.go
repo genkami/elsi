@@ -293,8 +293,8 @@ type Exporter interface {
 // This is automatically registered by system.
 func newBuiltinWorld(e Exporter) *World {
 	imports := map[string]Handler{
-		"exporter/poll_method_call": TypedHandler0[*Either[*MethodCall, *Error]](e.PollMethodCall),
-		"exporter/send_result":      TypedHandler1[*MethodResult, *Either[*Void, *Error]](e.SendResult),
+		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*Either[*MethodCall, *Error]](e.PollMethodCall),
+		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Either[*Void, *Error]](e.SendResult),
 	}
 	return NewWorld(imports)
 }
