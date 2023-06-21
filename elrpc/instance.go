@@ -269,6 +269,7 @@ func (instance *Instance) Use(w *World) {
 }
 
 func (instance *Instance) Start() error {
+	instance.Use(newBuiltinWorld(&exporterImpl{}))
 	err := instance.mod.Start()
 	if err != nil {
 		return err
@@ -353,4 +354,28 @@ func (instance *Instance) dispatchRequest(dec *Decoder) ([]byte, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+type exporterImpl struct{}
+
+var _ Exporter = &exporterImpl{}
+
+func (e *exporterImpl) PollMethodCall() *Either[*MethodCall, *Error] {
+	type Resp = Either[*MethodCall, *Error]
+	return &Resp{
+		IsOk: false,
+		Err: &Error{
+			Code: CodeUnimplemented,
+		},
+	}
+}
+
+func (e *exporterImpl) SendResult(m *MethodResult) *Either[*Void, *Error] {
+	type Resp = Either[*Void, *Error]
+	return &Resp{
+		IsOk: false,
+		Err: &Error{
+			Code: CodeUnimplemented,
+		},
+	}
 }

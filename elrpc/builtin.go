@@ -130,6 +130,11 @@ func (e *Either[T, U]) ZeroMessage() Message {
 	return &Either[T, U]{}
 }
 
+const (
+	CodeUnknown       = 0x0000
+	CodeUnimplemented = 0x0001
+)
+
 type Error struct {
 	Code uint64
 	// TODO: add message?
@@ -260,4 +265,14 @@ func (m *MethodResult) ZeroMessage() Message {
 type Exporter interface {
 	PollMethodCall() *Either[*MethodCall, *Error]
 	SendResult(*MethodResult) *Either[*Void, *Error]
+}
+
+// The world that every ELRPC instance should use.
+// This is automatically registered by system.
+func newBuiltinWorld(e Exporter) *World {
+	imports := map[string]Handler{
+		"exporter/poll_method_call": TypedHandler0[*Either[*MethodCall, *Error]](e.PollMethodCall),
+		"exporter/send_result":      TypedHandler1[*MethodResult, *Either[*Void, *Error]](e.SendResult),
+	}
+	return NewWorld(imports)
 }
