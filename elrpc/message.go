@@ -175,3 +175,8 @@ type Message interface {
 	Marshaler
 	ZeroMessage() Message
 }
+
+func NewMessage[T Message]() Message {
+	var z T
+	return z.ZeroMessage()
+}

@@ -9,10 +9,12 @@ import (
 )
 
 type Handler interface {
+	// TODO: this is not necessary
 	DecodeRequest(*Decoder) (Message, error)
 	HandleRequest(Message) Message
 }
 
+// TODO: make TypedFunc0, ..., TypedFunc5
 type TypedHandlerFunc[Req, Resp Message] func(Req) Resp
 
 func (h TypedHandlerFunc[Req, Resp]) DecodeRequest(dec *Decoder) (Message, error) {
