@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/genkami/elsi/elrpc/message"
+	"github.com/genkami/elsi/elrpc"
 )
 
 var methodsMap map[string]AnyHandler
@@ -87,13 +87,13 @@ type pipeStream struct {
 
 type AnyHandler interface {
 	MethodName() string
-	DecodeRequest(*message.Decoder) (Message, error)
+	DecodeRequest(*elrpc.Decoder) (Message, error)
 	HandleRequest(Message) Message
 }
 
 type Message interface {
-	message.Unmarshaler
-	message.Marshaler
+	elrpc.Unmarshaler
+	elrpc.Marshaler
 	ZeroMessage() Message
 }
 
@@ -106,7 +106,7 @@ func (h *Handler[Req, Resp]) MethodName() string {
 	return h.Name
 }
 
-func (h *Handler[Req, Resp]) DecodeRequest(dec *message.Decoder) (Message, error) {
+func (h *Handler[Req, Resp]) DecodeRequest(dec *elrpc.Decoder) (Message, error) {
 	var z Req
 	req := z.ZeroMessage()
 	err := req.UnmarshalELRPC(dec)
@@ -123,12 +123,12 @@ func (h *Handler[Req, Resp]) HandleRequest(req Message) Message {
 func serverWorker(strm Stream) error {
 	var err error
 	for {
-		rlenBuf := make([]byte, message.LengthSize)
+		rlenBuf := make([]byte, elrpc.LengthSize)
 		_, err = io.ReadFull(strm, rlenBuf)
 		if err != nil {
 			return err
 		}
-		length, err := message.DecodeLength(rlenBuf)
+		length, err := elrpc.DecodeLength(rlenBuf)
 		if err != nil {
 			return err
 		}
@@ -138,14 +138,14 @@ func serverWorker(strm Stream) error {
 		if err != nil {
 			return err
 		}
-		dec := message.NewDecoder(req)
+		dec := elrpc.NewDecoder(req)
 
 		resp, err := dispatchRequest(dec)
 		if err != nil {
 			return err
 		}
 
-		wlenBuf, err := message.AppendLength(nil, len(resp))
+		wlenBuf, err := elrpc.AppendLength(nil, len(resp))
 		if err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func serverWorker(strm Stream) error {
 	}
 }
 
-func dispatchRequest(dec *message.Decoder) ([]byte, error) {
+func dispatchRequest(dec *elrpc.Decoder) ([]byte, error) {
 	methodName, err := dec.DecodeBytes()
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func dispatchRequest(dec *message.Decoder) ([]byte, error) {
 		return nil, err
 	}
 	resp := handler.HandleRequest(req)
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ type Either[T, U Message] struct {
 	Err  U
 }
 
-func (e *Either[T, U]) UnmarshalELRPC(dec *message.Decoder) error {
+func (e *Either[T, U]) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	vtag, err := dec.DecodeVariant()
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func (e *Either[T, U]) UnmarshalELRPC(dec *message.Decoder) error {
 	}
 }
 
-func (e *Either[T, U]) MarshalELRPC(enc *message.Encoder) error {
+func (e *Either[T, U]) MarshalELRPC(enc *elrpc.Encoder) error {
 	var err error
 	if e.IsOk {
 		err = enc.EncodeVariant(0)
@@ -254,7 +254,7 @@ type Error struct {
 	// TODO: add message?
 }
 
-func (e *Error) UnmarshalELRPC(dec *message.Decoder) error {
+func (e *Error) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	code, err := dec.DecodeUint64()
 	if err != nil {
 		return err
@@ -263,7 +263,7 @@ func (e *Error) UnmarshalELRPC(dec *message.Decoder) error {
 	return nil
 }
 
-func (e *Error) MarshalELRPC(enc *message.Encoder) error {
+func (e *Error) MarshalELRPC(enc *elrpc.Encoder) error {
 	err := enc.EncodeUint64(e.Code)
 	if err != nil {
 		return err
@@ -279,7 +279,7 @@ type PingRequest struct {
 	Nonce int64
 }
 
-func (r *PingRequest) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *PingRequest) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	nonce, err := dec.DecodeInt64()
 	if err != nil {
 		return err
@@ -288,7 +288,7 @@ func (r *PingRequest) UnmarshalELRPC(dec *message.Decoder) error {
 	return nil
 }
 
-func (r *PingRequest) MarshalELRPC(enc *message.Encoder) error {
+func (r *PingRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("PingRequest.MarshalELRPC: TODO")
 }
 
@@ -300,11 +300,11 @@ type PingResponse struct {
 	Nonce int64
 }
 
-func (r *PingResponse) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *PingResponse) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	panic("PingResponse.UnmarshalELRPC: TODO")
 }
 
-func (r *PingResponse) MarshalELRPC(enc *message.Encoder) error {
+func (r *PingResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	err := enc.EncodeInt64(r.Nonce)
 	if err != nil {
 		return err
@@ -331,7 +331,7 @@ type AddRequest struct {
 	X, Y int64
 }
 
-func (r *AddRequest) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *AddRequest) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	x, err := dec.DecodeInt64()
 	if err != nil {
 		return err
@@ -345,7 +345,7 @@ func (r *AddRequest) UnmarshalELRPC(dec *message.Decoder) error {
 	return nil
 }
 
-func (r *AddRequest) MarshalELRPC(enc *message.Encoder) error {
+func (r *AddRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("AddRequest.MarshalELRPC: TODO")
 }
 
@@ -357,11 +357,11 @@ type AddResponse struct {
 	Sum int64
 }
 
-func (r *AddResponse) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *AddResponse) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	panic("AddResponse.UnmarshalELRPC: TODO")
 }
 
-func (r *AddResponse) MarshalELRPC(enc *message.Encoder) error {
+func (r *AddResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	err := enc.EncodeInt64(r.Sum)
 	if err != nil {
 		return err
@@ -388,7 +388,7 @@ type DivRequest struct {
 	X, Y int64
 }
 
-func (r *DivRequest) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *DivRequest) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	x, err := dec.DecodeInt64()
 	if err != nil {
 		return err
@@ -402,7 +402,7 @@ func (r *DivRequest) UnmarshalELRPC(dec *message.Decoder) error {
 	return nil
 }
 
-func (r *DivRequest) MarshalELRPC(enc *message.Encoder) error {
+func (r *DivRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("DivRequest.MarshalELRPC: TODO")
 }
 
@@ -414,11 +414,11 @@ type DivResponse struct {
 	Result int64
 }
 
-func (r *DivResponse) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *DivResponse) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	panic("DivResponse.UnmarshalELRPC: TODO")
 }
 
-func (r *DivResponse) MarshalELRPC(enc *message.Encoder) error {
+func (r *DivResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	err := enc.EncodeInt64(r.Result)
 	if err != nil {
 		return err
@@ -457,7 +457,7 @@ type WriteFileRequest struct {
 	Buf    []byte
 }
 
-func (r *WriteFileRequest) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *WriteFileRequest) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	handle, err := dec.DecodeUint64()
 	if err != nil {
 		return err
@@ -471,7 +471,7 @@ func (r *WriteFileRequest) UnmarshalELRPC(dec *message.Decoder) error {
 	return nil
 }
 
-func (r *WriteFileRequest) MarshalELRPC(enc *message.Encoder) error {
+func (r *WriteFileRequest) MarshalELRPC(enc *elrpc.Encoder) error {
 	panic("WriteFileRequest.MarshalELRPC: TODO")
 }
 
@@ -483,11 +483,11 @@ type WriteFileResponse struct {
 	Length uint64
 }
 
-func (r *WriteFileResponse) UnmarshalELRPC(dec *message.Decoder) error {
+func (r *WriteFileResponse) UnmarshalELRPC(dec *elrpc.Decoder) error {
 	panic("WriteFileResponse.UnmarshalELRPC: TODO")
 }
 
-func (r *WriteFileResponse) MarshalELRPC(enc *message.Encoder) error {
+func (r *WriteFileResponse) MarshalELRPC(enc *elrpc.Encoder) error {
 	var err error
 	err = enc.EncodeUint64(uint64(r.Length))
 	if err != nil {

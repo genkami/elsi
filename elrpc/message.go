@@ -1,4 +1,4 @@
-package message
+package elrpc
 
 import (
 	"encoding/binary"

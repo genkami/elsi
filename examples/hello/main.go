@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/genkami/elsi/elrpc/message"
+	"github.com/genkami/elsi/elrpc"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 }
 
 func doPing() error {
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err := enc.EncodeBytes([]byte("elsi.x.ping"))
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func doAdd() error {
 	var x int64 = 333
 	var y int64 = 222
 
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err = enc.EncodeBytes([]byte("elsi.x.add"))
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func doDiv(x, y int64) func() error {
 	return func() error {
 		var err error
 
-		enc := message.NewEncoder()
+		enc := elrpc.NewEncoder()
 		err = enc.EncodeBytes([]byte("elsi.x.div"))
 		if err != nil {
 			return err
@@ -159,7 +159,7 @@ func doDiv(x, y int64) func() error {
 
 func doWriteFile() error {
 	var err error
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err = enc.EncodeBytes([]byte("elsi.x.write_file"))
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func doWriteFile() error {
 }
 
 func sendReq(req []byte) error {
-	lenBuf, err := message.AppendLength(nil, len(req))
+	lenBuf, err := elrpc.AppendLength(nil, len(req))
 	if err != nil {
 		return err
 	}
@@ -226,13 +226,13 @@ func sendReq(req []byte) error {
 	return nil
 }
 
-func receiveResp() (*message.Decoder, error) {
-	lenBuf := make([]byte, message.LengthSize)
+func receiveResp() (*elrpc.Decoder, error) {
+	lenBuf := make([]byte, elrpc.LengthSize)
 	_, err := io.ReadFull(os.Stdin, lenBuf)
 	if err != nil {
 		return nil, err
 	}
-	length, err := message.DecodeLength(lenBuf)
+	length, err := elrpc.DecodeLength(lenBuf)
 	if err != nil {
 		return nil, err
 	}
@@ -241,5 +241,5 @@ func receiveResp() (*message.Decoder, error) {
 	if err != nil {
 		return nil, err
 	}
-	return message.NewDecoder(resp), nil
+	return elrpc.NewDecoder(resp), nil
 }

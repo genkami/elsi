@@ -1,10 +1,11 @@
-package message_test
+package elrpc_test
 
 import (
 	"testing"
 
-	"github.com/genkami/elsi/elrpc/message"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/genkami/elsi/elrpc"
 )
 
 func TestDecoder_DecodeInt64(t *testing.T) {
@@ -12,7 +13,7 @@ func TestDecoder_DecodeInt64(t *testing.T) {
 		0x00,                                           // type tag (int64)
 		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
 	}
-	dec := message.NewDecoder(buf)
+	dec := elrpc.NewDecoder(buf)
 	got, err := dec.DecodeInt64()
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +30,7 @@ func TestDecoder_DecodeUint64(t *testing.T) {
 		0x02,                                           // type tag (uint64)
 		0xf2, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
 	}
-	dec := message.NewDecoder(buf)
+	dec := elrpc.NewDecoder(buf)
 	got, err := dec.DecodeUint64()
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +48,7 @@ func TestDecoder_DecodeBytes(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length = 10
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // value = "Hello"
 	}
-	dec := message.NewDecoder(buf)
+	dec := elrpc.NewDecoder(buf)
 	got, err := dec.DecodeBytes()
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +65,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 		0x03, // type tag (variant)
 		0xab, // value
 	}
-	dec := message.NewDecoder(buf)
+	dec := elrpc.NewDecoder(buf)
 	got, err := dec.DecodeVariant()
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +78,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 }
 
 func TestEncoder_EncodeInt64(t *testing.T) {
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err := enc.EncodeInt64(0x1a2b3c4d5e6f7a8b)
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +95,7 @@ func TestEncoder_EncodeInt64(t *testing.T) {
 }
 
 func TestEncoder_EncodeUint64(t *testing.T) {
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err := enc.EncodeUint64(0xfa2b3c4d5e6f7a8b)
 	if err != nil {
 		t.Fatal(err)
@@ -111,7 +112,7 @@ func TestEncoder_EncodeUint64(t *testing.T) {
 }
 
 func TestEncoder_EncodeBytes(t *testing.T) {
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err := enc.EncodeBytes([]byte("Konnichiwa"))
 	if err != nil {
 		t.Fatal(err)
@@ -129,7 +130,7 @@ func TestEncoder_EncodeBytes(t *testing.T) {
 }
 
 func TestEncoder_EncodeVariant(t *testing.T) {
-	enc := message.NewEncoder()
+	enc := elrpc.NewEncoder()
 	err := enc.EncodeVariant(0xef)
 	if err != nil {
 		t.Fatal(err)
