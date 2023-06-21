@@ -34,14 +34,15 @@ type World struct {
 	// TODO: exports
 }
 
-func NewWorld() *World {
-	return &World{
+func NewWorld(imports map[string]Handler) *World {
+	w := &World{
 		imports: make(map[string]Handler),
 	}
-}
-
-func (w *World) Register(name string, h Handler) {
-	w.imports[name] = h
+	// explicitly copy the map
+	for name, h := range imports {
+		w.imports[name] = h
+	}
+	return w
 }
 
 type Stream interface {

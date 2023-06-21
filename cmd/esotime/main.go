@@ -5,24 +5,9 @@ import (
 	"os"
 
 	"github.com/genkami/elsi/elrpc"
+	"github.com/genkami/elsi/elrpc/api/std"
 	"github.com/genkami/elsi/elrpc/api/x"
 )
-
-var theWorld *elrpc.World
-
-func init() {
-	w := elrpc.NewWorld()
-	handlers := map[string]elrpc.Handler{
-		"elsi.x.ping":       x.PingHandler,
-		"elsi.x.add":        x.AddHandler,
-		"elsi.x.div":        x.DivHandler,
-		"elsi.x.write_file": x.WriteFileHandler,
-	}
-	for name, h := range handlers {
-		w.Register(name, h)
-	}
-	theWorld = w
-}
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: esotime run CMD...\n")
@@ -40,7 +25,7 @@ func main() {
 
 	mod := elrpc.NewProcessModule(args[2], args[3:]...)
 	instance := elrpc.NewInstance(mod)
-	instance.Use(theWorld)
+	instance.Use(x.NewWorld(&todoImpl{}))
 	err := instance.Start()
 	if err != nil {
 		panic(err)
@@ -52,4 +37,57 @@ func main() {
 	}
 
 	fmt.Fprintf(os.Stderr, "esotime: OK\n")
+}
+
+type todoImpl struct{}
+
+var _ x.TODO = &todoImpl{}
+
+func (*todoImpl) Ping(req *x.PingRequest) *x.PingResponse {
+	return &x.PingResponse{
+		Nonce: req.Nonce,
+	}
+}
+
+func (*todoImpl) Add(req *x.AddRequest) *x.AddResponse {
+	return &x.AddResponse{
+		Sum: req.X + req.Y,
+	}
+}
+
+func (*todoImpl) Div(req *x.DivRequest) *std.Either[*x.DivResponse, *std.Error] {
+	type Resp = std.Either[*x.DivResponse, *std.Error]
+	if req.Y == 0 {
+		return &Resp{
+			IsOk: false,
+			Err: &std.Error{
+				Code: 0xababcdcd,
+			},
+		}
+	}
+	return &Resp{
+		IsOk: true,
+		Ok: &x.DivResponse{
+			Result: req.X / req.Y,
+		},
+	}
+}
+
+func (*todoImpl) WriteFile(req *x.WriteFileRequest) *std.Either[*x.WriteFileResponse, *std.Error] {
+	type Resp = std.Either[*x.WriteFileResponse, *std.Error]
+	length, err := os.Stdout.Write(req.Buf)
+	if err != nil {
+		return &Resp{
+			IsOk: false,
+			Err: &std.Error{
+				Code: 0x12345,
+			},
+		}
+	}
+	return &Resp{
+		IsOk: true,
+		Ok: &x.WriteFileResponse{
+			Length: uint64(length),
+		},
+	}
 }
