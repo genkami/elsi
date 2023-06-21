@@ -12,11 +12,11 @@ var theWorld *elrpc.World
 
 func init() {
 	w := elrpc.NewWorld()
-	handlers := map[string]elrpc.AnyHandler{
-		"elsi.x.ping":       &x.PingHandler,
-		"elsi.x.add":        &x.AddHandler,
-		"elsi.x.div":        &x.DivHandler,
-		"elsi.x.write_file": &x.WriteFileHandler,
+	handlers := map[string]elrpc.Handler{
+		"elsi.x.ping":       x.PingHandler,
+		"elsi.x.add":        x.AddHandler,
+		"elsi.x.div":        x.DivHandler,
+		"elsi.x.write_file": x.WriteFileHandler,
 	}
 	for name, h := range handlers {
 		w.Register(name, h)

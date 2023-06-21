@@ -8,22 +8,14 @@ import (
 	"sync"
 )
 
-type AnyHandler interface {
-	MethodName() string
+type Handler interface {
 	DecodeRequest(*Decoder) (Message, error)
 	HandleRequest(Message) Message
 }
 
-type Handler[Req, Resp Message] struct {
-	Name string
-	Impl func(Req) Resp
-}
+type TypedHandlerFunc[Req, Resp Message] func(Req) Resp
 
-func (h *Handler[Req, Resp]) MethodName() string {
-	return h.Name
-}
-
-func (h *Handler[Req, Resp]) DecodeRequest(dec *Decoder) (Message, error) {
+func (h TypedHandlerFunc[Req, Resp]) DecodeRequest(dec *Decoder) (Message, error) {
 	var z Req
 	req := z.ZeroMessage()
 	err := req.UnmarshalELRPC(dec)
@@ -33,22 +25,22 @@ func (h *Handler[Req, Resp]) DecodeRequest(dec *Decoder) (Message, error) {
 	return req, nil
 }
 
-func (h *Handler[Req, Resp]) HandleRequest(req Message) Message {
-	return h.Impl(req.(Req))
+func (h TypedHandlerFunc[Req, Resp]) HandleRequest(req Message) Message {
+	return h(req.(Req))
 }
 
 type World struct {
-	imports map[string]AnyHandler
+	imports map[string]Handler
 	// TODO: exports
 }
 
 func NewWorld() *World {
 	return &World{
-		imports: make(map[string]AnyHandler),
+		imports: make(map[string]Handler),
 	}
 }
 
-func (w *World) Register(name string, h AnyHandler) {
+func (w *World) Register(name string, h Handler) {
 	w.imports[name] = h
 }
 
@@ -106,14 +98,14 @@ func (m *ProcessModule) Wait() error {
 }
 
 type Instance struct {
-	handlers map[string]AnyHandler
+	handlers map[string]Handler
 	mod      Module
 	wg       sync.WaitGroup
 }
 
 func NewInstance(mod Module) *Instance {
 	return &Instance{
-		handlers: make(map[string]AnyHandler),
+		handlers: make(map[string]Handler),
 		mod:      mod,
 	}
 }

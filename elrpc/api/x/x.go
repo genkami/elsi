@@ -54,10 +54,7 @@ func pingImpl(req *PingRequest) *PingResponse {
 	}
 }
 
-var PingHandler = elrpc.Handler[*PingRequest, *PingResponse]{
-	Name: "elsi.x.ping",
-	Impl: pingImpl,
-}
+var PingHandler = elrpc.TypedHandlerFunc[*PingRequest, *PingResponse](pingImpl)
 
 type AddRequest struct {
 	X, Y int64
@@ -111,10 +108,7 @@ func addImpl(req *AddRequest) *AddResponse {
 	}
 }
 
-var AddHandler = elrpc.Handler[*AddRequest, *AddResponse]{
-	Name: "elsi.x.add",
-	Impl: addImpl,
-}
+var AddHandler = elrpc.TypedHandlerFunc[*AddRequest, *AddResponse](addImpl)
 
 type DivRequest struct {
 	X, Y int64
@@ -180,10 +174,7 @@ func divImpl(req *DivRequest) *std.Either[*DivResponse, *std.Error] {
 	}
 }
 
-var DivHandler = elrpc.Handler[*DivRequest, *std.Either[*DivResponse, *std.Error]]{
-	Name: "elsi.x.div",
-	Impl: divImpl,
-}
+var DivHandler = elrpc.TypedHandlerFunc[*DivRequest, *std.Either[*DivResponse, *std.Error]](divImpl)
 
 type WriteFileRequest struct {
 	Handle uint64
@@ -221,8 +212,7 @@ func (r *WriteFileResponse) UnmarshalELRPC(dec *elrpc.Decoder) error {
 }
 
 func (r *WriteFileResponse) MarshalELRPC(enc *elrpc.Encoder) error {
-	var err error
-	err = enc.EncodeUint64(uint64(r.Length))
+	err := enc.EncodeUint64(uint64(r.Length))
 	if err != nil {
 		return err
 	}
@@ -252,7 +242,4 @@ func writeFileImpl(req *WriteFileRequest) *std.Either[*WriteFileResponse, *std.E
 	}
 }
 
-var WriteFileHandler = elrpc.Handler[*WriteFileRequest, *std.Either[*WriteFileResponse, *std.Error]]{
-	Name: "elsi.x.write_file",
-	Impl: writeFileImpl,
-}
+var WriteFileHandler = elrpc.TypedHandlerFunc[*WriteFileRequest, *std.Either[*WriteFileResponse, *std.Error]](writeFileImpl)
