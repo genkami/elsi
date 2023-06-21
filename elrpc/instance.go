@@ -252,14 +252,19 @@ func (m *ProcessModule) Wait() error {
 type Instance struct {
 	handlers map[string]Handler
 	mod      Module
+	exporter *exporterImpl
 	wg       sync.WaitGroup
 }
 
 func NewInstance(mod Module) *Instance {
-	return &Instance{
+	exporter := newExporter()
+	instance := &Instance{
 		handlers: make(map[string]Handler),
 		mod:      mod,
+		exporter: exporter,
 	}
+	instance.Use(newBuiltinWorld(exporter))
+	return instance
 }
 
 func (instance *Instance) Use(w *World) {
@@ -269,7 +274,6 @@ func (instance *Instance) Use(w *World) {
 }
 
 func (instance *Instance) Start() error {
-	instance.Use(newBuiltinWorld(&exporterImpl{}))
 	err := instance.mod.Start()
 	if err != nil {
 		return err
@@ -356,26 +360,83 @@ func (instance *Instance) dispatchRequest(dec *Decoder) ([]byte, error) {
 	return resp, nil
 }
 
-type exporterImpl struct{}
+// TODO: there can be an error
+func (instance *Instance) Call(name []byte, args *Any) *Any {
+	ch := instance.exporter.callAsync(&MethodCall{
+		Name: name,
+		Args: args,
+	})
+	r := <-ch
+	return r.retVal
+}
+
+type callResult struct {
+	retVal *Any
+}
+
+type exporterImpl struct {
+	mu        sync.Mutex
+	waiters   map[uint64]chan<- callResult
+	callQueue []*MethodCall
+	next      uint64
+}
 
 var _ Exporter = &exporterImpl{}
 
+func newExporter() *exporterImpl {
+	return &exporterImpl{
+		waiters: make(map[uint64]chan<- callResult),
+	}
+}
+
+func (e *exporterImpl) callAsync(call *MethodCall) <-chan callResult {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	ch := make(chan callResult, 1)
+	id := e.next
+	e.next++
+	call.ID = id
+	e.callQueue = append(e.callQueue, call)
+	e.waiters[id] = ch
+	return ch
+}
+
 func (e *exporterImpl) PollMethodCall() *Either[*MethodCall, *Error] {
 	type Resp = Either[*MethodCall, *Error]
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if len(e.callQueue) == 0 {
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code: CodeNotFound,
+			},
+		}
+	}
+	call := e.callQueue[0]
+	e.callQueue = e.callQueue[1:]
 	return &Resp{
-		IsOk: false,
-		Err: &Error{
-			Code: CodeUnimplemented,
-		},
+		IsOk: true,
+		Ok:   call,
 	}
 }
 
 func (e *exporterImpl) SendResult(m *MethodResult) *Either[*Void, *Error] {
 	type Resp = Either[*Void, *Error]
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	ch, ok := e.waiters[m.ID]
+	if !ok {
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code: CodeNotFound,
+			},
+		}
+	}
+	ch <- callResult{m.RetVal}
 	return &Resp{
-		IsOk: false,
-		Err: &Error{
-			Code: CodeUnimplemented,
-		},
+		IsOk: true,
+		Ok:   &Void{},
 	}
 }

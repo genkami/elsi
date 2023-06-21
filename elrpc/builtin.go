@@ -133,6 +133,7 @@ func (e *Either[T, U]) ZeroMessage() Message {
 const (
 	CodeUnknown       = 0x0000
 	CodeUnimplemented = 0x0001
+	CodeNotFound      = 0x0002
 )
 
 type Error struct {
