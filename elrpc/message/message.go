@@ -161,3 +161,11 @@ func (e *Encoder) EncodeVariant(val uint8) error {
 func (e *Encoder) Buffer() []byte {
 	return e.buf
 }
+
+type Marshaler interface {
+	MarshalELRPC(*Encoder) error
+}
+
+type Unmarshaler interface {
+	UnmarshalELRPC(*Decoder) error
+}

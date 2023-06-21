@@ -10,11 +10,19 @@ import (
 	"github.com/genkami/elsi/elrpc/message"
 )
 
-var methodsMap = map[string]func(*message.Decoder) ([]byte, error){
-	"elsi.x.ping":       ping,
-	"elsi.x.add":        add,
-	"elsi.x.div":        div,
-	"elsi.x.write_file": writeFile,
+var methodsMap map[string]AnyHandler
+
+func init() {
+	methodsMap = map[string]AnyHandler{}
+	handlers := []AnyHandler{
+		&PingHandler,
+		&AddHandler,
+		&DivHandler,
+		&WriteFileHandler,
+	}
+	for _, h := range handlers {
+		methodsMap[h.MethodName()] = h
+	}
 }
 
 func usage() {
@@ -77,6 +85,41 @@ type pipeStream struct {
 	io.Writer
 }
 
+type AnyHandler interface {
+	MethodName() string
+	DecodeRequest(*message.Decoder) (Message, error)
+	HandleRequest(Message) Message
+}
+
+type Message interface {
+	message.Unmarshaler
+	message.Marshaler
+	ZeroMessage() Message
+}
+
+type Handler[Req, Resp Message] struct {
+	Name string
+	Impl func(Req) Resp
+}
+
+func (h *Handler[Req, Resp]) MethodName() string {
+	return h.Name
+}
+
+func (h *Handler[Req, Resp]) DecodeRequest(dec *message.Decoder) (Message, error) {
+	var z Req
+	req := z.ZeroMessage()
+	err := req.UnmarshalELRPC(dec)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func (h *Handler[Req, Resp]) HandleRequest(req Message) Message {
+	return h.Impl(req.(Req))
+}
+
 func serverWorker(strm Stream) error {
 	var err error
 	for {
@@ -123,103 +166,360 @@ func dispatchRequest(dec *message.Decoder) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	method, ok := methodsMap[string(methodName)]
+	handler, ok := methodsMap[string(methodName)]
 	if !ok {
 		return nil, fmt.Errorf("no such method: %s", string(methodName))
 	}
-	return method(dec)
-}
-
-// ping(nonce: int64) -> int64
-func ping(dec *message.Decoder) ([]byte, error) {
-	enc := message.NewEncoder()
-	nonce, err := dec.DecodeInt64()
+	req, err := handler.DecodeRequest(dec)
 	if err != nil {
 		return nil, err
 	}
-	err = enc.EncodeInt64(nonce)
+	resp := handler.HandleRequest(req)
+	enc := message.NewEncoder()
+	err = resp.MarshalELRPC(enc)
 	if err != nil {
 		return nil, err
 	}
 	return enc.Buffer(), nil
 }
 
-// add(x: int64, y: int64) -> int64
-func add(dec *message.Decoder) ([]byte, error) {
-	enc := message.NewEncoder()
-	x, err := dec.DecodeInt64()
-	if err != nil {
-		return nil, err
-	}
-	y, err := dec.DecodeInt64()
-	if err != nil {
-		return nil, err
-	}
-	err = enc.EncodeInt64(x + y)
-	if err != nil {
-		return nil, err
-	}
-	return enc.Buffer(), nil
+type Either[T, U Message] struct {
+	IsOk bool
+	Ok   T
+	Err  U
 }
 
-// div(x: int32, y: int32) -> result: int64 | error: uint64
-func div(dec *message.Decoder) ([]byte, error) {
-	enc := message.NewEncoder()
-	x, err := dec.DecodeInt64()
+func (e *Either[T, U]) UnmarshalELRPC(dec *message.Decoder) error {
+	vtag, err := dec.DecodeVariant()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	y, err := dec.DecodeInt64()
-	if err != nil {
-		return nil, err
+	switch vtag {
+	case 0:
+		var z T
+		okVal := z.ZeroMessage()
+		err = okVal.UnmarshalELRPC(dec)
+		if err != nil {
+			return err
+		}
+		e.IsOk = true
+		e.Ok = okVal.(T)
+		return nil
+	case 1:
+		var z U
+		errVal := z.ZeroMessage()
+		err = errVal.UnmarshalELRPC(dec)
+		if err != nil {
+			return err
+		}
+		e.IsOk = false
+		e.Err = errVal.(U)
+		return nil
+	default:
+		return fmt.Errorf("either: invalid variant: %d", vtag)
 	}
-	if y == 0 {
+}
+
+func (e *Either[T, U]) MarshalELRPC(enc *message.Encoder) error {
+	var err error
+	if e.IsOk {
+		err = enc.EncodeVariant(0)
+		if err != nil {
+			return err
+		}
+		err = e.Ok.MarshalELRPC(enc)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
 		err = enc.EncodeVariant(1)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		// ZeroDivisionError
-		err = enc.EncodeUint64(0xababcdcd)
+		err = e.Err.MarshalELRPC(enc)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return enc.Buffer(), nil
+		return nil
 	}
-	err = enc.EncodeVariant(0)
-	if err != nil {
-		return nil, err
-	}
-	err = enc.EncodeInt64(x / y)
-	if err != nil {
-		return nil, err
-	}
-	return enc.Buffer(), nil
 }
 
-// write_file(handle: uint64, buf: bytes) -> nwritten: uint64 | error: uint64
-func writeFile(dec *message.Decoder) ([]byte, error) {
-	enc := message.NewEncoder()
-	_, err := dec.DecodeUint64()
+func (e *Either[T, U]) ZeroMessage() Message {
+	return &Either[T, U]{}
+}
+
+type Error struct {
+	Code uint64
+	// TODO: add message?
+}
+
+func (e *Error) UnmarshalELRPC(dec *message.Decoder) error {
+	code, err := dec.DecodeUint64()
 	if err != nil {
-		return nil, err
+		return err
+	}
+	e.Code = code
+	return nil
+}
+
+func (e *Error) MarshalELRPC(enc *message.Encoder) error {
+	err := enc.EncodeUint64(e.Code)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *Error) ZeroMessage() Message {
+	return &Error{}
+}
+
+type PingRequest struct {
+	Nonce int64
+}
+
+func (r *PingRequest) UnmarshalELRPC(dec *message.Decoder) error {
+	nonce, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	r.Nonce = nonce
+	return nil
+}
+
+func (r *PingRequest) MarshalELRPC(enc *message.Encoder) error {
+	panic("PingRequest.MarshalELRPC: TODO")
+}
+
+func (r *PingRequest) ZeroMessage() Message {
+	return &PingRequest{}
+}
+
+type PingResponse struct {
+	Nonce int64
+}
+
+func (r *PingResponse) UnmarshalELRPC(dec *message.Decoder) error {
+	panic("PingResponse.UnmarshalELRPC: TODO")
+}
+
+func (r *PingResponse) MarshalELRPC(enc *message.Encoder) error {
+	err := enc.EncodeInt64(r.Nonce)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PingResponse) ZeroMessage() Message {
+	return &PingResponse{}
+}
+
+func pingImpl(req *PingRequest) *PingResponse {
+	return &PingResponse{
+		Nonce: req.Nonce,
+	}
+}
+
+var PingHandler = Handler[*PingRequest, *PingResponse]{
+	Name: "elsi.x.ping",
+	Impl: pingImpl,
+}
+
+type AddRequest struct {
+	X, Y int64
+}
+
+func (r *AddRequest) UnmarshalELRPC(dec *message.Decoder) error {
+	x, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	y, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	r.X = x
+	r.Y = y
+	return nil
+}
+
+func (r *AddRequest) MarshalELRPC(enc *message.Encoder) error {
+	panic("AddRequest.MarshalELRPC: TODO")
+}
+
+func (r *AddRequest) ZeroMessage() Message {
+	return &AddRequest{}
+}
+
+type AddResponse struct {
+	Sum int64
+}
+
+func (r *AddResponse) UnmarshalELRPC(dec *message.Decoder) error {
+	panic("AddResponse.UnmarshalELRPC: TODO")
+}
+
+func (r *AddResponse) MarshalELRPC(enc *message.Encoder) error {
+	err := enc.EncodeInt64(r.Sum)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *AddResponse) ZeroMessage() Message {
+	return &AddResponse{}
+}
+
+func addImpl(req *AddRequest) *AddResponse {
+	return &AddResponse{
+		Sum: req.X + req.Y,
+	}
+}
+
+var AddHandler = Handler[*AddRequest, *AddResponse]{
+	Name: "elsi.x.add",
+	Impl: addImpl,
+}
+
+type DivRequest struct {
+	X, Y int64
+}
+
+func (r *DivRequest) UnmarshalELRPC(dec *message.Decoder) error {
+	x, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	y, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	r.X = x
+	r.Y = y
+	return nil
+}
+
+func (r *DivRequest) MarshalELRPC(enc *message.Encoder) error {
+	panic("DivRequest.MarshalELRPC: TODO")
+}
+
+func (r *DivRequest) ZeroMessage() Message {
+	return &DivRequest{}
+}
+
+type DivResponse struct {
+	Result int64
+}
+
+func (r *DivResponse) UnmarshalELRPC(dec *message.Decoder) error {
+	panic("DivResponse.UnmarshalELRPC: TODO")
+}
+
+func (r *DivResponse) MarshalELRPC(enc *message.Encoder) error {
+	err := enc.EncodeInt64(r.Result)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *DivResponse) ZeroMessage() Message {
+	return &DivResponse{}
+}
+
+func divImpl(req *DivRequest) *Either[*DivResponse, *Error] {
+	if req.Y == 0 {
+		return &Either[*DivResponse, *Error]{
+			IsOk: false,
+			Err: &Error{
+				Code: 0xababcdcd,
+			},
+		}
+	}
+	return &Either[*DivResponse, *Error]{
+		IsOk: true,
+		Ok: &DivResponse{
+			Result: req.X / req.Y,
+		},
+	}
+}
+
+var DivHandler = Handler[*DivRequest, *Either[*DivResponse, *Error]]{
+	Name: "elsi.x.div",
+	Impl: divImpl,
+}
+
+type WriteFileRequest struct {
+	Handle uint64
+	Buf    []byte
+}
+
+func (r *WriteFileRequest) UnmarshalELRPC(dec *message.Decoder) error {
+	handle, err := dec.DecodeUint64()
+	if err != nil {
+		return err
 	}
 	buf, err := dec.DecodeBytes()
 	if err != nil {
-		return nil, err
+		return err
 	}
+	r.Handle = handle
+	r.Buf = buf
+	return nil
+}
 
-	nwritten, err := os.Stdout.Write(buf)
-	if err != nil {
-		return nil, err
-	}
+func (r *WriteFileRequest) MarshalELRPC(enc *message.Encoder) error {
+	panic("WriteFileRequest.MarshalELRPC: TODO")
+}
 
-	err = enc.EncodeVariant(0)
+func (r *WriteFileRequest) ZeroMessage() Message {
+	return &WriteFileRequest{}
+}
+
+type WriteFileResponse struct {
+	Length uint64
+}
+
+func (r *WriteFileResponse) UnmarshalELRPC(dec *message.Decoder) error {
+	panic("WriteFileResponse.UnmarshalELRPC: TODO")
+}
+
+func (r *WriteFileResponse) MarshalELRPC(enc *message.Encoder) error {
+	var err error
+	err = enc.EncodeUint64(uint64(r.Length))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = enc.EncodeUint64(uint64(nwritten))
+	return nil
+}
+
+func (r *WriteFileResponse) ZeroMessage() Message {
+	return &WriteFileResponse{}
+}
+
+func writeFileImpl(req *WriteFileRequest) *Either[*WriteFileResponse, *Error] {
+	type Resp = Either[*WriteFileResponse, *Error]
+	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
-		return nil, err
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code: 0x12345,
+			},
+		}
 	}
-	return enc.Buffer(), nil
+	return &Resp{
+		IsOk: true,
+		Ok: &WriteFileResponse{
+			Length: uint64(length),
+		},
+	}
+}
+
+var WriteFileHandler = Handler[*WriteFileRequest, *Either[*WriteFileResponse, *Error]]{
+	Name: "elsi.x.write_file",
+	Impl: writeFileImpl,
 }
