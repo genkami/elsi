@@ -9,175 +9,169 @@ import (
 )
 
 type Handler interface {
-	HandleRequest(*Decoder) ([]byte, error)
+	HandleRequest(*Decoder, *Encoder) error
 }
 
 type TypedHandler0[R Message] func() R
 
-func (h TypedHandler0[R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler0[R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	resp := h()
 
-	enc := NewEncoder()
 	err := resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type TypedHandler1[T1, R Message] func(T1) R
 
-func (h TypedHandler1[T1, R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler1[T1, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := h(x1.(T1))
 
-	enc := NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type TypedHandler2[T1, T2, R Message] func(T1, T2) R
 
-func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := h(x1.(T1), x2.(T2))
 
-	enc := NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type TypedHandler3[T1, T2, T3, R Message] func(T1, T2, T3) R
 
-func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := h(x1.(T1), x2.(T2), x3.(T3))
 
-	enc := NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type TypedHandler4[T1, T2, T3, T4, R Message] func(T1, T2, T3, T4) R
 
-func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x4 := NewMessage[T4]()
 	err = x4.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := h(x1.(T1), x2.(T2), x3.(T3), x4.(T4))
 
-	enc := NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type TypedHandler5[T1, T2, T3, T4, T5, R Message] func(T1, T2, T3, T4, T5) R
 
-func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder) ([]byte, error) {
+func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x4 := NewMessage[T4]()
 	err = x4.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	x5 := NewMessage[T5]()
 	err = x5.UnmarshalELRPC(dec)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
 
-	enc := NewEncoder()
 	err = resp.MarshalELRPC(enc)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return enc.Buffer(), nil
+	return nil
 }
 
 type World struct {
@@ -353,11 +347,12 @@ func (instance *Instance) dispatchRequest(dec *Decoder) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("no such method: %s", string(methodName))
 	}
-	resp, err := handler.HandleRequest(dec)
+	enc := NewEncoder()
+	err = handler.HandleRequest(dec, enc)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return enc.Buffer(), nil
 }
 
 // TODO: there can be an error
