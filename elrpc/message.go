@@ -117,6 +117,14 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 	return val, nil
 }
 
+func (d *Decoder) DecodeString() (string, error) {
+	val, err := d.DecodeBytes()
+	if err != nil {
+		return "", err
+	}
+	return string(val), nil
+}
+
 func (d *Decoder) DecodeVariant() (uint8, error) {
 	if len(d.buf) < 2 {
 		return 0, ErrInsufficientBuf
@@ -177,6 +185,10 @@ func (e *Encoder) EncodeBytes(val []byte) error {
 	e.buf = endian.AppendUint64(e.buf, uint64(len(val)))
 	e.buf = append(e.buf, val...)
 	return nil
+}
+
+func (e *Encoder) EncodeString(val string) error {
+	return e.EncodeBytes([]byte(val))
 }
 
 func (e *Encoder) EncodeVariant(val uint8) error {

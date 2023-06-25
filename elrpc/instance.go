@@ -308,19 +308,40 @@ func (instance *Instance) serverWorker() error {
 
 func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error] {
 	type Resp = Result[Message, *Error]
-	methodName, err := dec.DecodeBytes()
+	methodName, err := dec.DecodeString()
 	if err != nil {
 		// TODO: message
-		return &Resp{IsOk: false, Err: &Error{Code: CodeInvalidRequest}}
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code:    CodeInvalidRequest,
+				Message: "failed to decode method name",
+			},
+		}
 	}
-	handler, ok := instance.handlers[string(methodName)]
+	handler, ok := instance.handlers[methodName]
 	if !ok {
-		return &Resp{IsOk: false, Err: &Error{Code: CodeUnimplemented}}
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code:    CodeUnimplemented,
+				Message: fmt.Sprintf("method %s is not implemented", methodName),
+			},
+		}
 	}
 	resp, err := handler.HandleRequest(dec)
 	if err != nil {
-		// TODO: message
-		return &Resp{IsOk: false, Err: &Error{Code: CodeInternal}}
+		var elrpcErr *Error
+		if errors.As(err, &elrpcErr) {
+			return &Resp{IsOk: false, Err: elrpcErr}
+		}
+		return &Resp{
+			IsOk: false,
+			Err: &Error{
+				Code:    CodeInternal,
+				Message: err.Error(),
+			},
+		}
 	}
 	return &Resp{IsOk: true, Ok: resp}
 }
@@ -371,8 +392,10 @@ func (e *exporterImpl) PollMethodCall() (*MethodCall, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
-		// TODO: message
-		return nil, errors.New("no method call")
+		return nil, &Error{
+			Code:    CodeNotFound,
+			Message: "no method call",
+		}
 	}
 	call := e.callQueue[0]
 	e.callQueue = e.callQueue[1:]
@@ -385,8 +408,10 @@ func (e *exporterImpl) SendResult(m *MethodResult) (*Void, error) {
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.ID]
 	if !ok {
-		// TODO: message
-		return nil, errors.New("not found")
+		return nil, &Error{
+			Code:    CodeNotFound,
+			Message: "no such method call",
+		}
 	}
 	ch <- callResult{m.RetVal}
 	return &Void{}, nil

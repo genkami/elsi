@@ -160,8 +160,12 @@ const (
 )
 
 type Error struct {
-	Code uint64
-	// TODO: add message?
+	Code    uint64
+	Message string
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("elrpc: error (code = %X): %s", e.Code, e.Message)
 }
 
 func (e *Error) UnmarshalELRPC(dec *Decoder) error {

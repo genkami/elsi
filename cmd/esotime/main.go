@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -58,8 +57,10 @@ func (*todoImpl) Add(req *x.AddRequest) (*x.AddResponse, error) {
 func (*todoImpl) Div(req *x.DivRequest) (*x.DivResponse, error) {
 	type Resp = elrpc.Result[*x.DivResponse, *elrpc.Error]
 	if req.Y == 0 {
-		// TODO
-		return nil, errors.New("division by zero")
+		return nil, &elrpc.Error{
+			Code:    0xdeadbeef,
+			Message: "division by zero",
+		}
 	}
 	return &x.DivResponse{
 		Result: req.X / req.Y,
@@ -70,7 +71,7 @@ func (*todoImpl) WriteFile(req *x.WriteFileRequest) (*x.WriteFileResponse, error
 	type Resp = elrpc.Result[*x.WriteFileResponse, *elrpc.Error]
 	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
-		return nil, errors.New("failed to write to file")
+		return nil, err
 	}
 
 	return &x.WriteFileResponse{
