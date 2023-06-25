@@ -257,7 +257,7 @@ func (m *MethodCall) ZeroMessage() Message {
 
 type MethodResult struct {
 	ID     uint64
-	RetVal *Any
+	RetVal *Result[*Any, *Error]
 }
 
 func (m *MethodResult) UnmarshalELRPC(dec *Decoder) error {
@@ -265,12 +265,13 @@ func (m *MethodResult) UnmarshalELRPC(dec *Decoder) error {
 	if err != nil {
 		return err
 	}
-	ret, err := dec.DecodeAny()
+	resp := &Result[*Any, *Error]{}
+	err = resp.UnmarshalELRPC(dec)
 	if err != nil {
 		return err
 	}
 	m.ID = id
-	m.RetVal = ret
+	m.RetVal = resp
 	return nil
 }
 
@@ -279,7 +280,7 @@ func (m *MethodResult) MarshalELRPC(enc *Encoder) error {
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeAny(m.RetVal)
+	err = m.RetVal.MarshalELRPC(enc)
 	if err != nil {
 		return err
 	}

@@ -347,17 +347,20 @@ func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error]
 }
 
 // TODO: there can be an error
-func (instance *Instance) Call(name []byte, args *Any) *Any {
+func (instance *Instance) Call(name []byte, args *Any) (*Any, error) {
 	ch := instance.exporter.callAsync(&MethodCall{
 		Name: name,
 		Args: args,
 	})
 	r := <-ch
-	return r.retVal
+	if !r.retVal.IsOk {
+		return nil, r.retVal.Err
+	}
+	return r.retVal.Ok, nil
 }
 
 type callResult struct {
-	retVal *Any
+	retVal *Result[*Any, *Error]
 }
 
 type exporterImpl struct {
