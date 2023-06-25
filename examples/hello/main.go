@@ -48,14 +48,27 @@ func doPing() error {
 		return err
 	}
 
-	gotNonce, err := dec.DecodeInt64()
-	if err != nil {
-		return err
+	vt, err := dec.DecodeVariant()
+	switch vt {
+	case 0:
+		gotNonce, err := dec.DecodeInt64()
+		if err != nil {
+			return err
+		}
+
+		if nonce != gotNonce {
+			return fmt.Errorf("nonce mismatch: want = %d, got = %d", nonce, gotNonce)
+		}
+	case 1:
+		code, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "code: error (code = %X)\n", code)
+	default:
+		return fmt.Errorf("unknown variant: %d", vt)
 	}
 
-	if nonce != gotNonce {
-		return fmt.Errorf("nonce mismatch: want = %d, got = %d", nonce, gotNonce)
-	}
 	fmt.Fprintf(os.Stderr, "ping: OK\n")
 	return nil
 }
@@ -88,13 +101,28 @@ func doAdd() error {
 		return err
 	}
 
-	sum, err := dec.DecodeInt64()
+	vt, err := dec.DecodeVariant()
 	if err != nil {
 		return err
 	}
+	switch vt {
+	case 0:
+		sum, err := dec.DecodeInt64()
+		if err != nil {
+			return err
+		}
 
-	if sum != x+y {
-		return fmt.Errorf("%d + %d should be %d but got %d", x, y, x+y, sum)
+		if sum != x+y {
+			return fmt.Errorf("%d + %d should be %d but got %d", x, y, x+y, sum)
+		}
+	case 1:
+		code, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "code: error (code = %X)\n", code)
+	default:
+		return fmt.Errorf("unknown variant: %d", vt)
 	}
 	fmt.Fprintf(os.Stderr, "add: OK\n")
 	return nil

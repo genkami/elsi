@@ -152,9 +152,11 @@ func (e *Result[T, U]) ZeroMessage() Message {
 }
 
 const (
-	CodeUnknown       = 0x0000
-	CodeUnimplemented = 0x0001
-	CodeNotFound      = 0x0002
+	CodeUnknown        = 0x0000
+	CodeUnimplemented  = 0x0001
+	CodeNotFound       = 0x0002
+	CodeInvalidRequest = 0x0003
+	CodeInternal       = 0x0004
 )
 
 type Error struct {
@@ -285,16 +287,16 @@ func (m *MethodResult) ZeroMessage() Message {
 }
 
 type Exporter interface {
-	PollMethodCall() *Result[*MethodCall, *Error]
-	SendResult(*MethodResult) *Result[*Void, *Error]
+	PollMethodCall() (*MethodCall, error)
+	SendResult(*MethodResult) (*Void, error)
 }
 
 // The world that every ELRPC instance should use.
 // This is automatically registered by system.
 func newBuiltinWorld(e Exporter) *World {
 	imports := map[string]Handler{
-		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*Result[*MethodCall, *Error]](e.PollMethodCall),
-		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Result[*Void, *Error]](e.SendResult),
+		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*MethodCall](e.PollMethodCall),
+		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Void](e.SendResult),
 	}
 	return NewWorld(imports)
 }

@@ -1,6 +1,7 @@
 package elrpc
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,169 +10,133 @@ import (
 )
 
 type Handler interface {
-	HandleRequest(*Decoder, *Encoder) error
+	HandleRequest(*Decoder) (Message, error)
 }
 
-type TypedHandler0[R Message] func() R
+type TypedHandler0[R Message] func() (R, error)
 
-func (h TypedHandler0[R]) HandleRequest(dec *Decoder, enc *Encoder) error {
-	resp := h()
-
-	err := resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+func (h TypedHandler0[R]) HandleRequest(dec *Decoder) (Message, error) {
+	return h()
 }
 
-type TypedHandler1[T1, R Message] func(T1) R
+type TypedHandler1[T1, R Message] func(T1) (R, error)
 
-func (h TypedHandler1[T1, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
+func (h TypedHandler1[T1, R]) HandleRequest(dec *Decoder) (Message, error) {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := h(x1.(T1))
-
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h(x1.(T1))
 }
 
-type TypedHandler2[T1, T2, R Message] func(T1, T2) R
+type TypedHandler2[T1, T2, R Message] func(T1, T2) (R, error)
 
-func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
+func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *Decoder) (Message, error) {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := h(x1.(T1), x2.(T2))
-
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h(x1.(T1), x2.(T2))
 }
 
-type TypedHandler3[T1, T2, T3, R Message] func(T1, T2, T3) R
+type TypedHandler3[T1, T2, T3, R Message] func(T1, T2, T3) (R, error)
 
-func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
+func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *Decoder) (Message, error) {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := h(x1.(T1), x2.(T2), x3.(T3))
-
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h(x1.(T1), x2.(T2), x3.(T3))
 }
 
-type TypedHandler4[T1, T2, T3, T4, R Message] func(T1, T2, T3, T4) R
+type TypedHandler4[T1, T2, T3, T4, R Message] func(T1, T2, T3, T4) (R, error)
 
-func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
+func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *Decoder) (Message, error) {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x4 := NewMessage[T4]()
 	err = x4.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := h(x1.(T1), x2.(T2), x3.(T3), x4.(T4))
-
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4))
 }
 
-type TypedHandler5[T1, T2, T3, T4, T5, R Message] func(T1, T2, T3, T4, T5) R
+type TypedHandler5[T1, T2, T3, T4, T5, R Message] func(T1, T2, T3, T4, T5) (R, error)
 
-func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder, enc *Encoder) error {
+func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder) (Message, error) {
 	x1 := NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x2 := NewMessage[T2]()
 	err = x2.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x3 := NewMessage[T3]()
 	err = x3.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x4 := NewMessage[T4]()
 	err = x4.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	x5 := NewMessage[T5]()
 	err = x5.UnmarshalELRPC(dec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
-
-	err = resp.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
 }
 
 type World struct {
@@ -317,12 +282,15 @@ func (instance *Instance) serverWorker() error {
 		}
 		dec := NewDecoder(req)
 
-		resp, err := instance.dispatchRequest(dec)
+		resp := instance.dispatchRequest(dec)
+		enc := NewEncoder()
+		err = resp.MarshalELRPC(enc)
 		if err != nil {
 			return err
 		}
+		respBody := enc.Buffer()
 
-		wlenBuf, err := AppendLength(nil, len(resp))
+		wlenBuf, err := AppendLength(nil, len(respBody))
 		if err != nil {
 			return err
 		}
@@ -331,28 +299,30 @@ func (instance *Instance) serverWorker() error {
 			return err
 		}
 
-		_, err = stream.Write(resp)
+		_, err = stream.Write(respBody)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func (instance *Instance) dispatchRequest(dec *Decoder) ([]byte, error) {
+func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error] {
+	type Resp = Result[Message, *Error]
 	methodName, err := dec.DecodeBytes()
 	if err != nil {
-		return nil, err
+		// TODO: message
+		return &Resp{IsOk: false, Err: &Error{Code: CodeInvalidRequest}}
 	}
 	handler, ok := instance.handlers[string(methodName)]
 	if !ok {
-		return nil, fmt.Errorf("no such method: %s", string(methodName))
+		return &Resp{IsOk: false, Err: &Error{Code: CodeUnimplemented}}
 	}
-	enc := NewEncoder()
-	err = handler.HandleRequest(dec, enc)
+	resp, err := handler.HandleRequest(dec)
 	if err != nil {
-		return nil, err
+		// TODO: message
+		return &Resp{IsOk: false, Err: &Error{Code: CodeInternal}}
 	}
-	return enc.Buffer(), nil
+	return &Resp{IsOk: true, Ok: resp}
 }
 
 // TODO: there can be an error
@@ -396,42 +366,28 @@ func (e *exporterImpl) callAsync(call *MethodCall) <-chan callResult {
 	return ch
 }
 
-func (e *exporterImpl) PollMethodCall() *Result[*MethodCall, *Error] {
+func (e *exporterImpl) PollMethodCall() (*MethodCall, error) {
 	type Resp = Result[*MethodCall, *Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
-		return &Resp{
-			IsOk: false,
-			Err: &Error{
-				Code: CodeNotFound,
-			},
-		}
+		// TODO: message
+		return nil, errors.New("no method call")
 	}
 	call := e.callQueue[0]
 	e.callQueue = e.callQueue[1:]
-	return &Resp{
-		IsOk: true,
-		Ok:   call,
-	}
+	return call, nil
 }
 
-func (e *exporterImpl) SendResult(m *MethodResult) *Result[*Void, *Error] {
+func (e *exporterImpl) SendResult(m *MethodResult) (*Void, error) {
 	type Resp = Result[*Void, *Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.ID]
 	if !ok {
-		return &Resp{
-			IsOk: false,
-			Err: &Error{
-				Code: CodeNotFound,
-			},
-		}
+		// TODO: message
+		return nil, errors.New("not found")
 	}
 	ch <- callResult{m.RetVal}
-	return &Resp{
-		IsOk: true,
-		Ok:   &Void{},
-	}
+	return &Void{}, nil
 }

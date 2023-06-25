@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -42,51 +43,37 @@ type todoImpl struct{}
 
 var _ x.TODO = &todoImpl{}
 
-func (*todoImpl) Ping(req *x.PingRequest) *x.PingResponse {
+func (*todoImpl) Ping(req *x.PingRequest) (*x.PingResponse, error) {
 	return &x.PingResponse{
 		Nonce: req.Nonce,
-	}
+	}, nil
 }
 
-func (*todoImpl) Add(req *x.AddRequest) *x.AddResponse {
+func (*todoImpl) Add(req *x.AddRequest) (*x.AddResponse, error) {
 	return &x.AddResponse{
 		Sum: req.X + req.Y,
-	}
+	}, nil
 }
 
-func (*todoImpl) Div(req *x.DivRequest) *elrpc.Result[*x.DivResponse, *elrpc.Error] {
+func (*todoImpl) Div(req *x.DivRequest) (*x.DivResponse, error) {
 	type Resp = elrpc.Result[*x.DivResponse, *elrpc.Error]
 	if req.Y == 0 {
-		return &Resp{
-			IsOk: false,
-			Err: &elrpc.Error{
-				Code: 0xababcdcd,
-			},
-		}
+		// TODO
+		return nil, errors.New("division by zero")
 	}
-	return &Resp{
-		IsOk: true,
-		Ok: &x.DivResponse{
-			Result: req.X / req.Y,
-		},
-	}
+	return &x.DivResponse{
+		Result: req.X / req.Y,
+	}, nil
 }
 
-func (*todoImpl) WriteFile(req *x.WriteFileRequest) *elrpc.Result[*x.WriteFileResponse, *elrpc.Error] {
+func (*todoImpl) WriteFile(req *x.WriteFileRequest) (*x.WriteFileResponse, error) {
 	type Resp = elrpc.Result[*x.WriteFileResponse, *elrpc.Error]
 	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
-		return &Resp{
-			IsOk: false,
-			Err: &elrpc.Error{
-				Code: 0x12345,
-			},
-		}
+		return nil, errors.New("failed to write to file")
 	}
-	return &Resp{
-		IsOk: true,
-		Ok: &x.WriteFileResponse{
-			Length: uint64(length),
-		},
-	}
+
+	return &x.WriteFileResponse{
+		Length: uint64(length),
+	}, nil
 }
