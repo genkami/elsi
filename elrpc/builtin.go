@@ -303,10 +303,14 @@ type Exporter interface {
 	SendResult(*MethodResult) (*Void, error)
 }
 
+func ImportExporter(instance *Instance, e Exporter) {
+	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, TypedHandler0[*MethodCall](e.PollMethodCall))
+	instance.Use(ModuleID, MethodID_Exporter_SendResult, TypedHandler1[*MethodResult, *Void](e.SendResult))
+}
+
 type Exports struct{}
 
 func UseWorld(instance *Instance, e Exporter) *Exports {
-	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, TypedHandler0[*MethodCall](e.PollMethodCall))
-	instance.Use(ModuleID, MethodID_Exporter_SendResult, TypedHandler1[*MethodResult, *Void](e.SendResult))
+	ImportExporter(instance, e)
 	return &Exports{}
 }
