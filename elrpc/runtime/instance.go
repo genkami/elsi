@@ -5,66 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"sync"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/types"
 )
-
-type Stream interface {
-	io.ReadWriter
-}
-
-type pipeStream struct {
-	io.Reader
-	io.Writer
-}
-
-func NewPipeStream(in io.Reader, out io.Writer) Stream {
-	return &pipeStream{in, out}
-}
-
-type Module interface {
-	Stream() Stream
-	Start() error
-	Wait() error
-}
-
-type ProcessModule struct {
-	cmd    *exec.Cmd
-	stream Stream
-}
-
-func NewProcessModule(name string, args ...string) *ProcessModule {
-	cmd := exec.Command(name, args...)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		panic(err)
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
-	cmd.Stderr = os.Stderr
-	return &ProcessModule{
-		cmd:    cmd,
-		stream: NewPipeStream(stdout, stdin),
-	}
-}
-
-func (m *ProcessModule) Stream() Stream {
-	return m.stream
-}
-
-func (m *ProcessModule) Start() error {
-	return m.cmd.Start()
-}
-
-func (m *ProcessModule) Wait() error {
-	return m.cmd.Wait()
-}
 
 type Instance struct {
 	// a map from full method ID to its handler
@@ -214,69 +160,4 @@ func (instance *Instance) Call(moduleID, methodID uint32, args *message.Any) (*m
 		return nil, r.retVal.Err
 	}
 	return r.retVal.Ok, nil
-}
-
-type callResult struct {
-	retVal *message.Result[*message.Any, *message.Error]
-}
-
-type exporterImpl struct {
-	mu        sync.Mutex
-	waiters   map[uint64]chan<- callResult
-	callQueue []*builtin.MethodCall
-	next      uint64
-}
-
-var _ builtin.Exporter = &exporterImpl{}
-
-func newExporter() *exporterImpl {
-	return &exporterImpl{
-		waiters: make(map[uint64]chan<- callResult),
-	}
-}
-
-func (e *exporterImpl) callAsync(call *builtin.MethodCall) <-chan callResult {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	ch := make(chan callResult, 1)
-	id := e.next
-	e.next++
-	call.CallID = id
-	e.callQueue = append(e.callQueue, call)
-	e.waiters[id] = ch
-	return ch
-}
-
-func (e *exporterImpl) PollMethodCall() (*builtin.MethodCall, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if len(e.callQueue) == 0 {
-		return nil, &message.Error{
-			Code:    builtin.CodeNotFound,
-			Message: "no method call",
-		}
-	}
-	call := e.callQueue[0]
-	e.callQueue = e.callQueue[1:]
-	return call, nil
-}
-
-func (e *exporterImpl) SendResult(m *builtin.MethodResult) (*message.Void, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	ch, ok := e.waiters[m.CallID]
-	if !ok {
-		// TODO: slog
-		fmt.Fprintf(os.Stderr, "no such call: %X\n", m.CallID)
-		return nil, &message.Error{
-			Code:    builtin.CodeNotFound,
-			Message: "no such method call",
-		}
-	}
-	ch <- callResult{m.RetVal}
-	return &message.Void{}, nil
-}
-
-func fullID(moduleID, methodID uint32) uint64 {
-	return uint64(moduleID)<<32 | uint64(methodID)
 }
