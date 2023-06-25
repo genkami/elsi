@@ -25,7 +25,7 @@ func (g *greeterClient) Greet(name *elrpc.Bytes) (*elrpc.Bytes, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawResp, err := g.instance.Call([]byte("elsi.x.greeter/greet"), &elrpc.Any{Raw: enc.Buffer()})
+	rawResp, err := g.instance.Call(ModuleID, MethodID_Greeter_Greet, &elrpc.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return nil, err
 	}

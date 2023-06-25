@@ -29,7 +29,7 @@ func main() {
 
 func doPing() error {
 	enc := elrpc.NewEncoder()
-	err := enc.EncodeBytes([]byte("elsi.x.ping"))
+	err := enc.EncodeUint64(0x0000_BEEF_0000_0000) // elsi.x.TODO/Ping
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func doAdd() error {
 	var y int64 = 222
 
 	enc := elrpc.NewEncoder()
-	err = enc.EncodeBytes([]byte("elsi.x.add"))
+	err = enc.EncodeUint64(0x0000_BEEF_0000_0001) // elsi.x.TODO/Add
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func doDiv(x, y int64) func() error {
 		var err error
 
 		enc := elrpc.NewEncoder()
-		err = enc.EncodeBytes([]byte("elsi.x.div"))
+		err = enc.EncodeUint64(0x0000_BEEF_0000_0002) // elsi.x.TODO/div
 		if err != nil {
 			return err
 		}
@@ -188,7 +188,7 @@ func doDiv(x, y int64) func() error {
 func doWriteFile() error {
 	var err error
 	enc := elrpc.NewEncoder()
-	err = enc.EncodeBytes([]byte("elsi.x.write_file"))
+	err = enc.EncodeUint64(0x0000_BEEF_0000_0003) // elsi.x.TODO/WriteFile
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func doWriteFile() error {
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeBytes([]byte("Hello from ELSI!"))
+	err = enc.EncodeBytes([]byte("Hello from ELSI!\n"))
 	if err != nil {
 		return err
 	}

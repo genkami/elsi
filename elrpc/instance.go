@@ -193,7 +193,8 @@ func (m *ProcessModule) Wait() error {
 }
 
 type Instance struct {
-	handlers map[string]Handler
+	// a map from full method ID to its handler
+	handlers map[uint64]Handler
 	mod      Module
 	exporter *exporterImpl
 	wg       sync.WaitGroup
@@ -202,7 +203,7 @@ type Instance struct {
 func NewInstance(mod Module) *Instance {
 	exporter := newExporter()
 	instance := &Instance{
-		handlers: make(map[string]Handler),
+		handlers: make(map[uint64]Handler),
 		mod:      mod,
 		exporter: exporter,
 	}
@@ -210,8 +211,8 @@ func NewInstance(mod Module) *Instance {
 	return instance
 }
 
-func (instance *Instance) Use(name string, h Handler) {
-	instance.handlers[name] = h
+func (instance *Instance) Use(moduleID, methodID uint32, h Handler) {
+	instance.handlers[fullID(moduleID, methodID)] = h
 }
 
 func (instance *Instance) Start() error {
@@ -290,24 +291,24 @@ func (instance *Instance) serverWorker() error {
 
 func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error] {
 	type Resp = Result[Message, *Error]
-	methodName, err := dec.DecodeString()
+	mID, err := dec.DecodeUint64()
 	if err != nil {
 		// TODO: message
 		return &Resp{
 			IsOk: false,
 			Err: &Error{
 				Code:    CodeInvalidRequest,
-				Message: "failed to decode method name",
+				Message: "failed to decode method ID",
 			},
 		}
 	}
-	handler, ok := instance.handlers[methodName]
+	handler, ok := instance.handlers[mID]
 	if !ok {
 		return &Resp{
 			IsOk: false,
 			Err: &Error{
 				Code:    CodeUnimplemented,
-				Message: fmt.Sprintf("method %s is not implemented", methodName),
+				Message: fmt.Sprintf("method %X is not implemented", mID),
 			},
 		}
 	}
@@ -329,10 +330,10 @@ func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error]
 }
 
 // TODO: there can be an error
-func (instance *Instance) Call(name []byte, args *Any) (*Any, error) {
+func (instance *Instance) Call(moduleID, methodID uint32, args *Any) (*Any, error) {
 	ch := instance.exporter.callAsync(&MethodCall{
-		Name: name,
-		Args: args,
+		FullMethodID: fullID(moduleID, methodID),
+		Args:         args,
 	})
 	r := <-ch
 	if !r.retVal.IsOk {
@@ -366,7 +367,7 @@ func (e *exporterImpl) callAsync(call *MethodCall) <-chan callResult {
 	ch := make(chan callResult, 1)
 	id := e.next
 	e.next++
-	call.ID = id
+	call.CallID = id
 	e.callQueue = append(e.callQueue, call)
 	e.waiters[id] = ch
 	return ch
@@ -391,7 +392,7 @@ func (e *exporterImpl) SendResult(m *MethodResult) (*Void, error) {
 	type Resp = Result[*Void, *Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	ch, ok := e.waiters[m.ID]
+	ch, ok := e.waiters[m.CallID]
 	if !ok {
 		return nil, &Error{
 			Code:    CodeNotFound,
@@ -400,4 +401,8 @@ func (e *exporterImpl) SendResult(m *MethodResult) (*Void, error) {
 	}
 	ch <- callResult{m.RetVal}
 	return &Void{}, nil
+}
+
+func fullID(moduleID, methodID uint32) uint64 {
+	return uint64(moduleID)<<32 | uint64(methodID)
 }

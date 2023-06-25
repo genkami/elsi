@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+const (
+	ModuleID = 0x0000_0000
+
+	MethodID_Exporter_PollMethodCall = 0x0000_0000
+	MethodID_Exporter_SendResult     = 0x0000_0001
+)
+
 type Bytes struct {
 	Value []byte
 }
@@ -211,17 +218,17 @@ func (a *Any) ZeroMessage() Message {
 }
 
 type MethodCall struct {
-	ID   uint64
-	Name []byte
-	Args *Any
+	CallID       uint64
+	FullMethodID uint64
+	Args         *Any
 }
 
 func (m *MethodCall) UnmarshalELRPC(dec *Decoder) error {
-	id, err := dec.DecodeUint64()
+	callID, err := dec.DecodeUint64()
 	if err != nil {
 		return err
 	}
-	name, err := dec.DecodeBytes()
+	mID, err := dec.DecodeUint64()
 	if err != nil {
 		return err
 	}
@@ -229,18 +236,18 @@ func (m *MethodCall) UnmarshalELRPC(dec *Decoder) error {
 	if err != nil {
 		return err
 	}
-	m.ID = id
-	m.Name = name
+	m.CallID = callID
+	m.FullMethodID = mID
 	m.Args = args
 	return nil
 }
 
 func (m *MethodCall) MarshalELRPC(enc *Encoder) error {
-	err := enc.EncodeUint64(m.ID)
+	err := enc.EncodeUint64(m.CallID)
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeBytes(m.Name)
+	err = enc.EncodeUint64(m.FullMethodID)
 	if err != nil {
 		return err
 	}
@@ -256,7 +263,7 @@ func (m *MethodCall) ZeroMessage() Message {
 }
 
 type MethodResult struct {
-	ID     uint64
+	CallID uint64
 	RetVal *Result[*Any, *Error]
 }
 
@@ -270,13 +277,13 @@ func (m *MethodResult) UnmarshalELRPC(dec *Decoder) error {
 	if err != nil {
 		return err
 	}
-	m.ID = id
+	m.CallID = id
 	m.RetVal = resp
 	return nil
 }
 
 func (m *MethodResult) MarshalELRPC(enc *Encoder) error {
-	err := enc.EncodeUint64(m.ID)
+	err := enc.EncodeUint64(m.CallID)
 	if err != nil {
 		return err
 	}
@@ -299,7 +306,7 @@ type Exporter interface {
 type Exports struct{}
 
 func UseWorld(instance *Instance, e Exporter) *Exports {
-	instance.Use("elrpc.builtin.exporter/poll_method_call", TypedHandler0[*MethodCall](e.PollMethodCall))
-	instance.Use("elrpc.builtin.exporter/send_result", TypedHandler1[*MethodResult, *Void](e.SendResult))
+	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, TypedHandler0[*MethodCall](e.PollMethodCall))
+	instance.Use(ModuleID, MethodID_Exporter_SendResult, TypedHandler1[*MethodResult, *Void](e.SendResult))
 	return &Exports{}
 }

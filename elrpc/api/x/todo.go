@@ -13,10 +13,10 @@ type TODO interface {
 }
 
 func ImportTODO(instance *elrpc.Instance, todo TODO) {
-	instance.Use("elsi.x.ping", elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
-	instance.Use("elsi.x.add", elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
-	instance.Use("elsi.x.div", elrpc.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
-	instance.Use("elsi.x.write_file", elrpc.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
+	instance.Use(ModuleID, MethodID_TODO_Ping, elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
+	instance.Use(ModuleID, MethodID_TODO_Add, elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
+	instance.Use(ModuleID, MethodID_TODO_Div, elrpc.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
+	instance.Use(ModuleID, MethodID_TODO_WriteFile, elrpc.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
 }
 
 type PingRequest struct {
