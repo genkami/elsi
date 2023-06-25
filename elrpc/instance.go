@@ -139,22 +139,6 @@ func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder) (Messa
 	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
 }
 
-type World struct {
-	imports map[string]Handler
-	// TODO: exports
-}
-
-func NewWorld(imports map[string]Handler) *World {
-	w := &World{
-		imports: make(map[string]Handler),
-	}
-	// explicitly copy the map
-	for name, h := range imports {
-		w.imports[name] = h
-	}
-	return w
-}
-
 type Stream interface {
 	io.ReadWriter
 }
@@ -222,14 +206,12 @@ func NewInstance(mod Module) *Instance {
 		mod:      mod,
 		exporter: exporter,
 	}
-	instance.Use(newBuiltinWorld(exporter))
+	_ = UseWorld(instance, exporter)
 	return instance
 }
 
-func (instance *Instance) Use(w *World) {
-	for name, h := range w.imports {
-		instance.handlers[name] = h
-	}
+func (instance *Instance) Use(name string, h Handler) {
+	instance.handlers[name] = h
 }
 
 func (instance *Instance) Start() error {

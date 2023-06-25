@@ -6,16 +6,20 @@ type Greeter interface {
 	Greet(name *elrpc.Bytes) (*elrpc.Bytes, error)
 }
 
-type GreeterClient struct {
+type greeterClient struct {
 	instance *elrpc.Instance
 }
 
-var _ Greeter = &GreeterClient{}
+var _ Greeter = &greeterClient{}
+
+func ExportGreeter(instance *elrpc.Instance) Greeter {
+	return &greeterClient{instance: instance}
+}
 
 // TODO: handler functions should return error
 // -> Or we can let every methods have Result<_, Error> as a return value.
 // TODO: elrpc.Handler should have HandleImport and HandleExport
-func (g *GreeterClient) Greet(name *elrpc.Bytes) (*elrpc.Bytes, error) {
+func (g *greeterClient) Greet(name *elrpc.Bytes) (*elrpc.Bytes, error) {
 	enc := elrpc.NewEncoder()
 	err := name.MarshalELRPC(enc)
 	if err != nil {

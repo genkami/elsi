@@ -296,12 +296,10 @@ type Exporter interface {
 	SendResult(*MethodResult) (*Void, error)
 }
 
-// The world that every ELRPC instance should use.
-// This is automatically registered by system.
-func newBuiltinWorld(e Exporter) *World {
-	imports := map[string]Handler{
-		"elrpc.builtin.exporter/poll_method_call": TypedHandler0[*MethodCall](e.PollMethodCall),
-		"elrpc.builtin.exporter/send_result":      TypedHandler1[*MethodResult, *Void](e.SendResult),
-	}
-	return NewWorld(imports)
+type Exports struct{}
+
+func UseWorld(instance *Instance, e Exporter) *Exports {
+	instance.Use("elrpc.builtin.exporter/poll_method_call", TypedHandler0[*MethodCall](e.PollMethodCall))
+	instance.Use("elrpc.builtin.exporter/send_result", TypedHandler1[*MethodResult, *Void](e.SendResult))
+	return &Exports{}
 }

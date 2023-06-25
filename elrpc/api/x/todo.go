@@ -12,14 +12,11 @@ type TODO interface {
 	WriteFile(*WriteFileRequest) (*WriteFileResponse, error)
 }
 
-func NewWorld(todo TODO) *elrpc.World {
-	imports := map[string]elrpc.Handler{
-		"elsi.x.ping":       elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping),
-		"elsi.x.add":        elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add),
-		"elsi.x.div":        elrpc.TypedHandler1[*DivRequest, *DivResponse](todo.Div),
-		"elsi.x.write_file": elrpc.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile),
-	}
-	return elrpc.NewWorld(imports)
+func ImportTODO(instance *elrpc.Instance, todo TODO) {
+	instance.Use("elsi.x.ping", elrpc.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
+	instance.Use("elsi.x.add", elrpc.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
+	instance.Use("elsi.x.div", elrpc.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
+	instance.Use("elsi.x.write_file", elrpc.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
 }
 
 type PingRequest struct {

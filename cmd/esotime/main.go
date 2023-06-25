@@ -24,7 +24,7 @@ func main() {
 
 	mod := elrpc.NewProcessModule(args[2], args[3:]...)
 	instance := elrpc.NewInstance(mod)
-	instance.Use(x.NewWorld(&todoImpl{}))
+	_ = x.UseWorld(instance, &todoImpl{})
 	err := instance.Start()
 	if err != nil {
 		panic(err)
