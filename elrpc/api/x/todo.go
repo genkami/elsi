@@ -12,6 +12,7 @@ type TODO interface {
 	Add(*AddRequest) (*AddResponse, error)
 	Div(*DivRequest) (*DivResponse, error)
 	WriteFile(*WriteFileRequest) (*WriteFileResponse, error)
+	TestExport() (*message.Void, error)
 }
 
 func ImportTODO(instance types.Instance, todo TODO) {
@@ -19,6 +20,7 @@ func ImportTODO(instance types.Instance, todo TODO) {
 	instance.Use(ModuleID, MethodID_TODO_Add, helpers.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
 	instance.Use(ModuleID, MethodID_TODO_Div, helpers.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
 	instance.Use(ModuleID, MethodID_TODO_WriteFile, helpers.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
+	instance.Use(ModuleID, MethodID_TODO_TestExport, helpers.TypedHandler0[*message.Void](todo.TestExport))
 }
 
 type PingRequest struct {

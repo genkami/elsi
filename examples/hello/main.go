@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
 )
 
@@ -15,6 +16,7 @@ func main() {
 		doDiv(14, 7),
 		doDiv(15, 0),
 		doWriteFile,
+		doTestExport,
 	}
 
 	for _, action := range actions {
@@ -235,6 +237,160 @@ func doWriteFile() error {
 	}
 
 	fmt.Fprintf(os.Stderr, "writeFile: OK\n")
+	return nil
+}
+
+func doTestExport() error {
+	var err error
+	enc := message.NewEncoder()
+	err = enc.EncodeUint64(0x0000_BEEF_0000_0004) // elsi.x.TODO/TestExport
+	if err != nil {
+		return err
+	}
+
+	err = sendReq(enc.Buffer())
+	if err != nil {
+		return err
+	}
+
+	dec, err := receiveResp()
+	if err != nil {
+		return err
+	}
+
+	vtag, err := dec.DecodeVariant()
+	if err != nil {
+		return err
+	}
+
+	switch vtag {
+	case 0:
+		// OK (nop)
+	case 1:
+		code, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "testExport: error (code = %X)\n", code)
+	default:
+		return fmt.Errorf("unknown variant: %d", vtag)
+	}
+
+	var callID uint64
+	var name string
+
+pollLoop:
+	for {
+		enc = message.NewEncoder()
+		err = enc.EncodeUint64(0x0000_0000_0000_0000) // builtin.PollMethodCall
+		if err != nil {
+			return err
+		}
+		err = sendReq(enc.Buffer())
+		if err != nil {
+			return err
+		}
+
+		dec, err := receiveResp()
+		if err != nil {
+			return err
+		}
+
+		vtag, err := dec.DecodeVariant()
+		if err != nil {
+			return err
+		}
+		switch vtag {
+		case 0:
+			callID, err = dec.DecodeUint64()
+			if err != nil {
+				return err
+			}
+			mID, err := dec.DecodeUint64()
+			if err != nil {
+				return err
+			}
+			if mID != 0x0000_BEEF_0000_0010 { // elsi.x.Greeter/Greet
+				return fmt.Errorf("unknown method ID: %X", mID)
+			}
+			arg, err := dec.DecodeAny()
+			if err != nil {
+				return err
+			}
+			dec = message.NewDecoder(arg.Raw)
+			name, err = dec.DecodeString()
+			if err != nil {
+				return err
+			}
+			break pollLoop
+		case 1:
+			code, err := dec.DecodeUint64()
+			if err != nil {
+				return err
+			}
+			if code != builtin.CodeNotFound {
+				fmt.Fprintf(os.Stderr, "testExport: error (code = %X)\n", code)
+			}
+		default:
+			return fmt.Errorf("unknown variant: %d", vtag)
+		}
+	}
+
+	enc = message.NewEncoder()
+	err = enc.EncodeUint64(0x0000_0000_0000_0001) // builtin.SendResult
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeUint64(callID)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeVariant(0)
+	if err != nil {
+		return err
+	}
+	anyEnc := message.NewEncoder()
+	err = anyEnc.EncodeString("Hello, " + name + "!")
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeAny(&message.Any{Raw: anyEnc.Buffer()})
+	if err != nil {
+		return err
+	}
+
+	err = sendReq(enc.Buffer())
+	if err != nil {
+		return err
+	}
+
+	dec, err = receiveResp()
+	if err != nil {
+		return err
+	}
+
+	vtag, err = dec.DecodeVariant()
+	if err != nil {
+		return err
+	}
+	switch vtag {
+	case 0:
+		// OK (nop)
+	case 1:
+		code, err := dec.DecodeUint64()
+		if err != nil {
+			return err
+		}
+		msg, err := dec.DecodeString()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("testExport: SendResult: error (code = %X): %s", code, msg)
+	default:
+		return fmt.Errorf("testExport: SendResult: unknown variant: %d", vtag)
+	}
+
+	fmt.Fprintf(os.Stderr, "testExport: OK\n")
 	return nil
 }
 

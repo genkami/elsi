@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/genkami/elsi/elrpc/api/x"
 	"github.com/genkami/elsi/elrpc/message"
@@ -25,7 +26,9 @@ func main() {
 
 	mod := runtime.NewProcessModule(args[2], args[3:]...)
 	instance := runtime.NewInstance(mod)
-	_ = x.UseWorld(instance, &todoImpl{})
+	todo := &todoImpl{}
+	exports := x.UseWorld(instance, todo)
+	todo.greeter = exports.Greeter
 	err := instance.Start()
 	if err != nil {
 		panic(err)
@@ -39,7 +42,9 @@ func main() {
 	fmt.Fprintf(os.Stderr, "esotime: OK\n")
 }
 
-type todoImpl struct{}
+type todoImpl struct {
+	greeter x.Greeter
+}
 
 var _ x.TODO = &todoImpl{}
 
@@ -56,7 +61,6 @@ func (*todoImpl) Add(req *x.AddRequest) (*x.AddResponse, error) {
 }
 
 func (*todoImpl) Div(req *x.DivRequest) (*x.DivResponse, error) {
-	type Resp = message.Result[*x.DivResponse, *message.Error]
 	if req.Y == 0 {
 		return nil, &message.Error{
 			Code:    0xdeadbeef,
@@ -69,7 +73,6 @@ func (*todoImpl) Div(req *x.DivRequest) (*x.DivResponse, error) {
 }
 
 func (*todoImpl) WriteFile(req *x.WriteFileRequest) (*x.WriteFileResponse, error) {
-	type Resp = message.Result[*x.WriteFileResponse, *message.Error]
 	length, err := os.Stdout.Write(req.Buf)
 	if err != nil {
 		return nil, err
@@ -78,4 +81,17 @@ func (*todoImpl) WriteFile(req *x.WriteFileRequest) (*x.WriteFileResponse, error
 	return &x.WriteFileResponse{
 		Length: uint64(length),
 	}, nil
+}
+
+func (t *todoImpl) TestExport() (*message.Void, error) {
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		res, err := t.greeter.Greet(&message.Bytes{Value: []byte("Taro")})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "esotime: TestExport: %s\n", err.Error())
+			return
+		}
+		fmt.Fprintf(os.Stderr, "esotime: GreetResponse = %s\n", string(res.Value))
+	}()
+	return &message.Void{}, nil
 }

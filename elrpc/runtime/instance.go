@@ -248,7 +248,6 @@ func (e *exporterImpl) callAsync(call *builtin.MethodCall) <-chan callResult {
 }
 
 func (e *exporterImpl) PollMethodCall() (*builtin.MethodCall, error) {
-	type Resp = message.Result[*builtin.MethodCall, *message.Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
@@ -263,11 +262,12 @@ func (e *exporterImpl) PollMethodCall() (*builtin.MethodCall, error) {
 }
 
 func (e *exporterImpl) SendResult(m *builtin.MethodResult) (*message.Void, error) {
-	type Resp = message.Result[*message.Void, *message.Error]
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.CallID]
 	if !ok {
+		// TODO: slog
+		fmt.Fprintf(os.Stderr, "no such call: %X\n", m.CallID)
 		return nil, &message.Error{
 			Code:    builtin.CodeNotFound,
 			Message: "no such method call",
