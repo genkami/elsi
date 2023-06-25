@@ -1,15 +1,10 @@
-package elrpc
+package message
 
-import (
-	"fmt"
-)
+import "fmt"
 
-const (
-	ModuleID = 0x0000_0000
-
-	MethodID_Exporter_PollMethodCall = 0x0000_0000
-	MethodID_Exporter_SendResult     = 0x0000_0001
-)
+// TODO:
+// * Int64
+// * Uint64
 
 type Bytes struct {
 	Value []byte
@@ -158,14 +153,6 @@ func (e *Result[T, U]) ZeroMessage() Message {
 	return &Result[T, U]{}
 }
 
-const (
-	CodeUnknown        = 0x0000
-	CodeUnimplemented  = 0x0001
-	CodeNotFound       = 0x0002
-	CodeInvalidRequest = 0x0003
-	CodeInternal       = 0x0004
-)
-
 type Error struct {
 	Code    uint64
 	Message string
@@ -215,102 +202,4 @@ func (a *Any) MarshalELRPC(enc *Encoder) error {
 
 func (a *Any) ZeroMessage() Message {
 	return &Any{}
-}
-
-type MethodCall struct {
-	CallID       uint64
-	FullMethodID uint64
-	Args         *Any
-}
-
-func (m *MethodCall) UnmarshalELRPC(dec *Decoder) error {
-	callID, err := dec.DecodeUint64()
-	if err != nil {
-		return err
-	}
-	mID, err := dec.DecodeUint64()
-	if err != nil {
-		return err
-	}
-	args, err := dec.DecodeAny()
-	if err != nil {
-		return err
-	}
-	m.CallID = callID
-	m.FullMethodID = mID
-	m.Args = args
-	return nil
-}
-
-func (m *MethodCall) MarshalELRPC(enc *Encoder) error {
-	err := enc.EncodeUint64(m.CallID)
-	if err != nil {
-		return err
-	}
-	err = enc.EncodeUint64(m.FullMethodID)
-	if err != nil {
-		return err
-	}
-	err = enc.EncodeAny(m.Args)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *MethodCall) ZeroMessage() Message {
-	return &MethodCall{}
-}
-
-type MethodResult struct {
-	CallID uint64
-	RetVal *Result[*Any, *Error]
-}
-
-func (m *MethodResult) UnmarshalELRPC(dec *Decoder) error {
-	id, err := dec.DecodeUint64()
-	if err != nil {
-		return err
-	}
-	resp := &Result[*Any, *Error]{}
-	err = resp.UnmarshalELRPC(dec)
-	if err != nil {
-		return err
-	}
-	m.CallID = id
-	m.RetVal = resp
-	return nil
-}
-
-func (m *MethodResult) MarshalELRPC(enc *Encoder) error {
-	err := enc.EncodeUint64(m.CallID)
-	if err != nil {
-		return err
-	}
-	err = m.RetVal.MarshalELRPC(enc)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *MethodResult) ZeroMessage() Message {
-	return &MethodResult{}
-}
-
-type Exporter interface {
-	PollMethodCall() (*MethodCall, error)
-	SendResult(*MethodResult) (*Void, error)
-}
-
-func ImportExporter(instance *Instance, e Exporter) {
-	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, TypedHandler0[*MethodCall](e.PollMethodCall))
-	instance.Use(ModuleID, MethodID_Exporter_SendResult, TypedHandler1[*MethodResult, *Void](e.SendResult))
-}
-
-type Exports struct{}
-
-func UseWorld(instance *Instance, e Exporter) *Exports {
-	ImportExporter(instance, e)
-	return &Exports{}
 }

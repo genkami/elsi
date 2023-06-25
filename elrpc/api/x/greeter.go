@@ -1,23 +1,27 @@
 package x
 
-import "github.com/genkami/elsi/elrpc"
+import (
+	"github.com/genkami/elsi/elrpc/helpers"
+	"github.com/genkami/elsi/elrpc/message"
+	"github.com/genkami/elsi/elrpc/types"
+)
 
 type Greeter interface {
-	Greet(name *elrpc.Bytes) (*elrpc.Bytes, error)
+	Greet(name *message.Bytes) (*message.Bytes, error)
 }
 
 type greeterClient struct {
-	greetImpl *elrpc.MethodCaller1[*elrpc.Bytes, *elrpc.Bytes]
+	greetImpl *helpers.MethodCaller1[*message.Bytes, *message.Bytes]
 }
 
 var _ Greeter = &greeterClient{}
 
-func ExportGreeter(instance *elrpc.Instance) Greeter {
+func ExportGreeter(instance types.Instance) Greeter {
 	return &greeterClient{
-		greetImpl: elrpc.NewMethodCaller1[*elrpc.Bytes, *elrpc.Bytes](instance, ModuleID, MethodID_Greeter_Greet),
+		greetImpl: helpers.NewMethodCaller1[*message.Bytes, *message.Bytes](instance, ModuleID, MethodID_Greeter_Greet),
 	}
 }
 
-func (g *greeterClient) Greet(name *elrpc.Bytes) (*elrpc.Bytes, error) {
+func (g *greeterClient) Greet(name *message.Bytes) (*message.Bytes, error) {
 	return g.greetImpl.Call(name)
 }
