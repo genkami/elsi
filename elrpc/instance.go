@@ -139,6 +139,262 @@ func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *Decoder) (Messa
 	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
 }
 
+type methodCaller struct {
+	instance *Instance
+	moduleID uint32
+	methodID uint32
+}
+
+type MethodCaller0[R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller0[R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller0[R] {
+	return &MethodCaller0[R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller0[R]) Call() (R, error) {
+	var zero R
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
+type MethodCaller1[T1, R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller1[T1, R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller1[T1, R] {
+	return &MethodCaller1[T1, R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller1[T1, R]) Call(x1 T1) (R, error) {
+	var zero R
+	enc := NewEncoder()
+	err := x1.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{Raw: enc.Buffer()})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
+type MethodCaller2[T1, T2, R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller2[T1, T2, R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller2[T1, T2, R] {
+	return &MethodCaller2[T1, T2, R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller2[T1, T2, R]) Call(x1 T1, x2 T2) (R, error) {
+	var zero R
+	enc := NewEncoder()
+	err := x1.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x2.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{Raw: enc.Buffer()})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
+type MethodCaller3[T1, T2, T3, R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller3[T1, T2, T3, R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller3[T1, T2, T3, R] {
+	return &MethodCaller3[T1, T2, T3, R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller3[T1, T2, T3, R]) Call(x1 T1, x2 T2, x3 T3) (R, error) {
+	var zero R
+	enc := NewEncoder()
+	err := x1.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x2.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x3.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{Raw: enc.Buffer()})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
+type MethodCaller4[T1, T2, T3, T4, R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller4[T1, T2, T3, T4, R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller4[T1, T2, T3, T4, R] {
+	return &MethodCaller4[T1, T2, T3, T4, R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller4[T1, T2, T3, T4, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4) (R, error) {
+	var zero R
+	enc := NewEncoder()
+	err := x1.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x2.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x3.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x4.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{Raw: enc.Buffer()})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
+type MethodCaller5[T1, T2, T3, T4, T5, R Message] struct {
+	methodCaller
+}
+
+func NewMethodCaller5[T1, T2, T3, T4, T5, R Message](instance *Instance, moduleID, methodID uint32) *MethodCaller5[T1, T2, T3, T4, T5, R] {
+	return &MethodCaller5[T1, T2, T3, T4, T5, R]{
+		methodCaller: methodCaller{
+			instance: instance,
+			moduleID: moduleID,
+			methodID: methodID,
+		},
+	}
+}
+
+func (c *MethodCaller5[T1, T2, T3, T4, T5, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4, x5 T5) (R, error) {
+	var zero R
+	enc := NewEncoder()
+	err := x1.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x2.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x3.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x4.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+	err = x5.MarshalELRPC(enc)
+	if err != nil {
+		return zero, err
+	}
+
+	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &Any{Raw: enc.Buffer()})
+	if err != nil {
+		return zero, err
+	}
+
+	dec := NewDecoder(rawResp.Raw)
+	resp := NewMessage[R]()
+	err = resp.UnmarshalELRPC(dec)
+	if err != nil {
+		return zero, err
+	}
+	return resp.(R), nil
+}
+
 type Stream interface {
 	io.ReadWriter
 }
@@ -293,7 +549,6 @@ func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error]
 	type Resp = Result[Message, *Error]
 	mID, err := dec.DecodeUint64()
 	if err != nil {
-		// TODO: message
 		return &Resp{
 			IsOk: false,
 			Err: &Error{
@@ -329,7 +584,6 @@ func (instance *Instance) dispatchRequest(dec *Decoder) *Result[Message, *Error]
 	return &Resp{IsOk: true, Ok: resp}
 }
 
-// TODO: there can be an error
 func (instance *Instance) Call(moduleID, methodID uint32, args *Any) (*Any, error) {
 	ch := instance.exporter.callAsync(&MethodCall{
 		FullMethodID: fullID(moduleID, methodID),
