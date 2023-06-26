@@ -27,7 +27,9 @@ func main() {
 	mod := runtime.NewProcessModule(args[2], args[3:]...)
 	instance := runtime.NewInstance(mod)
 	todo := &todoImpl{}
-	exports := x.UseWorld(instance, todo)
+	exports := x.UseWorld(instance, &x.Imports{
+		TODO: todo,
+	})
 	todo.greeter = exports.Greeter
 	err := instance.Start()
 	if err != nil {
