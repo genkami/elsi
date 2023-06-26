@@ -2,9 +2,47 @@ package message
 
 import "fmt"
 
-// TODO:
-// * Int64
-// * Uint64
+type Uint64 struct {
+	Value uint64
+}
+
+func (u *Uint64) UnmarshalELRPC(dec *Decoder) error {
+	val, err := dec.DecodeUint64()
+	if err != nil {
+		return err
+	}
+	u.Value = val
+	return nil
+}
+
+func (u *Uint64) MarshalELRPC(enc *Encoder) error {
+	return enc.EncodeUint64(u.Value)
+}
+
+func (u *Uint64) ZeroMessage() Message {
+	return &Uint64{}
+}
+
+type Int64 struct {
+	Value int64
+}
+
+func (i *Int64) UnmarshalELRPC(dec *Decoder) error {
+	val, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	i.Value = val
+	return nil
+}
+
+func (i *Int64) MarshalELRPC(enc *Encoder) error {
+	return enc.EncodeInt64(i.Value)
+}
+
+func (i *Int64) ZeroMessage() Message {
+	return &Int64{}
+}
 
 type Bytes struct {
 	Value []byte
@@ -25,6 +63,27 @@ func (b *Bytes) MarshalELRPC(enc *Encoder) error {
 
 func (b *Bytes) ZeroMessage() Message {
 	return &Bytes{}
+}
+
+type String struct {
+	Value string
+}
+
+func (s *String) UnmarshalELRPC(dec *Decoder) error {
+	val, err := dec.DecodeString()
+	if err != nil {
+		return err
+	}
+	s.Value = val
+	return nil
+}
+
+func (s *String) MarshalELRPC(enc *Encoder) error {
+	return enc.EncodeString(s.Value)
+}
+
+func (s *String) ZeroMessage() Message {
+	return &String{}
 }
 
 type Void struct{}
