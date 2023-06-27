@@ -22,9 +22,10 @@ const (
 )
 
 type MethodCall struct {
-	CallID       uint64
-	FullMethodID uint64
-	Args         *message.Any
+	CallID   uint64
+	ModuleID uint32
+	MethodID uint32
+	Args     *message.Any
 }
 
 func (m *MethodCall) UnmarshalELRPC(dec *message.Decoder) error {
@@ -32,7 +33,11 @@ func (m *MethodCall) UnmarshalELRPC(dec *message.Decoder) error {
 	if err != nil {
 		return err
 	}
-	mID, err := dec.DecodeUint64()
+	modID, err := dec.DecodeUint64()
+	if err != nil {
+		return err
+	}
+	methodID, err := dec.DecodeUint64()
 	if err != nil {
 		return err
 	}
@@ -41,7 +46,9 @@ func (m *MethodCall) UnmarshalELRPC(dec *message.Decoder) error {
 		return err
 	}
 	m.CallID = callID
-	m.FullMethodID = mID
+	// TODO: uint32
+	m.ModuleID = uint32(modID)
+	m.MethodID = uint32(methodID)
 	m.Args = args
 	return nil
 }
@@ -51,7 +58,12 @@ func (m *MethodCall) MarshalELRPC(enc *message.Encoder) error {
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeUint64(m.FullMethodID)
+	// TODO: uint32
+	err = enc.EncodeUint64(uint64(m.ModuleID))
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeUint64(uint64(m.MethodID))
 	if err != nil {
 		return err
 	}

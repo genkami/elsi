@@ -9,6 +9,7 @@ import (
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
+	"github.com/genkami/elsi/elrpc/runtime/internal/builtinimpl"
 	"github.com/genkami/elsi/elrpc/types"
 )
 
@@ -16,14 +17,14 @@ type Instance struct {
 	// a map from full method ID to its handler
 	handlers map[uint64]types.Handler
 	mod      Module
-	exporter *exporterImpl
+	exporter *builtinimpl.Exporter
 	wg       sync.WaitGroup
 }
 
 var _ types.Instance = (*Instance)(nil)
 
 func NewInstance(mod Module) *Instance {
-	exporter := newExporter()
+	exporter := builtinimpl.NewExporter()
 	instance := &Instance{
 		handlers: make(map[uint64]types.Handler),
 		mod:      mod,
@@ -151,13 +152,18 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 }
 
 func (instance *Instance) Call(moduleID, methodID uint32, args *message.Any) (*message.Any, error) {
-	ch := instance.exporter.callAsync(&builtin.MethodCall{
-		FullMethodID: fullID(moduleID, methodID),
-		Args:         args,
+	ch := instance.exporter.CallAsync(&builtin.MethodCall{
+		ModuleID: moduleID,
+		MethodID: methodID,
+		Args:     args,
 	})
 	r := <-ch
-	if !r.retVal.IsOk {
-		return nil, r.retVal.Err
+	if !r.RetVal.IsOk {
+		return nil, r.RetVal.Err
 	}
-	return r.retVal.Ok, nil
+	return r.RetVal.Ok, nil
+}
+
+func fullID(moduleID, methodID uint32) uint64 {
+	return uint64(moduleID)<<32 | uint64(methodID)
 }

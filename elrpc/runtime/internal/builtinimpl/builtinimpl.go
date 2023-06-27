@@ -1,4 +1,4 @@
-package runtime
+package builtinimpl
 
 import (
 	"fmt"
@@ -9,29 +9,29 @@ import (
 	"github.com/genkami/elsi/elrpc/message"
 )
 
-type callResult struct {
-	retVal *message.Result[*message.Any, *message.Error]
+type CallResult struct {
+	RetVal *message.Result[*message.Any, *message.Error]
 }
 
-type exporterImpl struct {
+type Exporter struct {
 	mu        sync.Mutex
-	waiters   map[uint64]chan<- callResult
+	waiters   map[uint64]chan<- CallResult
 	callQueue []*builtin.MethodCall
 	next      uint64
 }
 
-var _ builtin.Exporter = &exporterImpl{}
+var _ builtin.Exporter = &Exporter{}
 
-func newExporter() *exporterImpl {
-	return &exporterImpl{
-		waiters: make(map[uint64]chan<- callResult),
+func NewExporter() *Exporter {
+	return &Exporter{
+		waiters: make(map[uint64]chan<- CallResult),
 	}
 }
 
-func (e *exporterImpl) callAsync(call *builtin.MethodCall) <-chan callResult {
+func (e *Exporter) CallAsync(call *builtin.MethodCall) <-chan CallResult {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	ch := make(chan callResult, 1)
+	ch := make(chan CallResult, 1)
 	id := e.next
 	e.next++
 	call.CallID = id
@@ -40,7 +40,7 @@ func (e *exporterImpl) callAsync(call *builtin.MethodCall) <-chan callResult {
 	return ch
 }
 
-func (e *exporterImpl) PollMethodCall() (*builtin.MethodCall, error) {
+func (e *Exporter) PollMethodCall() (*builtin.MethodCall, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
@@ -54,7 +54,7 @@ func (e *exporterImpl) PollMethodCall() (*builtin.MethodCall, error) {
 	return call, nil
 }
 
-func (e *exporterImpl) SendResult(m *builtin.MethodResult) (*message.Void, error) {
+func (e *Exporter) SendResult(m *builtin.MethodResult) (*message.Void, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.CallID]
@@ -66,10 +66,6 @@ func (e *exporterImpl) SendResult(m *builtin.MethodResult) (*message.Void, error
 			Message: "no such method call",
 		}
 	}
-	ch <- callResult{m.RetVal}
+	ch <- CallResult{m.RetVal}
 	return &message.Void{}, nil
-}
-
-func fullID(moduleID, methodID uint32) uint64 {
-	return uint64(moduleID)<<32 | uint64(methodID)
 }
