@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/genkami/elsi/elrpc/api/x"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/runtime"
@@ -24,8 +26,9 @@ func main() {
 		usage()
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	mod := runtime.NewProcessModule(args[2], args[3:]...)
-	instance := runtime.NewInstance(mod)
+	instance := runtime.NewInstance(logger, mod)
 	todo := &todoImpl{}
 	exports := x.UseWorld(instance, &x.Imports{
 		TODO: todo,

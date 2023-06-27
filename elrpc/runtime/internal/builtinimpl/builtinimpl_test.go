@@ -2,12 +2,14 @@ package builtinimpl_test
 
 import (
 	"errors"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/runtime/internal/builtinimpl"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -16,8 +18,10 @@ const (
 	MethodID_Nop_Nop = 0x0000_0000
 )
 
+var logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
+
 func TestExporterImpl_PollMethodCall_notfound(t *testing.T) {
-	e := builtinimpl.NewExporter()
+	e := builtinimpl.NewExporter(logger)
 	_, err := e.PollMethodCall()
 	if err == nil {
 		t.Errorf("want error but got nil")
@@ -32,7 +36,7 @@ func TestExporterImpl_PollMethodCall_notfound(t *testing.T) {
 }
 
 func TestExporterImpl_PollMethodCall_found(t *testing.T) {
-	e := builtinimpl.NewExporter()
+	e := builtinimpl.NewExporter(logger)
 
 	enc := message.NewEncoder()
 	err := enc.EncodeUint64(0xdeadbeef)

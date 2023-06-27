@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sync"
+
+	"golang.org/x/exp/slog"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
@@ -14,8 +15,8 @@ import (
 )
 
 type Instance struct {
-	// a map from full method ID to its handler
-	handlers map[uint64]types.Handler
+	logger   *slog.Logger
+	handlers map[uint64]types.Handler // a map from full method ID to its handler
 	mod      Module
 	exporter *builtinimpl.Exporter
 	wg       sync.WaitGroup
@@ -23,8 +24,8 @@ type Instance struct {
 
 var _ types.Instance = (*Instance)(nil)
 
-func NewInstance(mod Module) *Instance {
-	exporter := builtinimpl.NewExporter()
+func NewInstance(logger *slog.Logger, mod Module) *Instance {
+	exporter := builtinimpl.NewExporter(logger)
 	instance := &Instance{
 		handlers: make(map[uint64]types.Handler),
 		mod:      mod,
@@ -49,8 +50,8 @@ func (instance *Instance) Start() error {
 		defer instance.wg.Done()
 		err := instance.serverWorker()
 		if err != nil {
-			// TODO
-			fmt.Fprintf(os.Stderr, "worker error: %s\n", err.Error())
+			// TODO: stop module
+			instance.logger.Error("worker error", slog.String("error", err.Error()))
 		}
 	}()
 	// TODO: negotiation required?
@@ -89,6 +90,9 @@ func (instance *Instance) serverWorker() error {
 		dec := message.NewDecoder(req)
 
 		resp := instance.dispatchRequest(dec)
+		if !resp.IsOk {
+			instance.logger.Error("method error", slog.String("error", resp.Err.Error()))
+		}
 		enc := message.NewEncoder()
 		err = resp.MarshalELRPC(enc)
 		if err != nil {

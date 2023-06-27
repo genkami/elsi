@@ -1,12 +1,11 @@
 package builtinimpl
 
 import (
-	"fmt"
-	"os"
 	"sync"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
+	"golang.org/x/exp/slog"
 )
 
 type CallResult struct {
@@ -14,6 +13,7 @@ type CallResult struct {
 }
 
 type Exporter struct {
+	logger    *slog.Logger
 	mu        sync.Mutex
 	waiters   map[uint64]chan<- CallResult
 	callQueue []*builtin.MethodCall
@@ -22,8 +22,9 @@ type Exporter struct {
 
 var _ builtin.Exporter = &Exporter{}
 
-func NewExporter() *Exporter {
+func NewExporter(logger *slog.Logger) *Exporter {
 	return &Exporter{
+		logger:  logger,
 		waiters: make(map[uint64]chan<- CallResult),
 	}
 }
@@ -59,8 +60,7 @@ func (e *Exporter) SendResult(m *builtin.MethodResult) (*message.Void, error) {
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.CallID]
 	if !ok {
-		// TODO: slog
-		fmt.Fprintf(os.Stderr, "no such call: %X\n", m.CallID)
+		e.logger.Error("no such call", slog.Uint64("call_id", m.CallID))
 		return nil, &message.Error{
 			Code:    builtin.CodeNotFound,
 			Message: "no such method call",

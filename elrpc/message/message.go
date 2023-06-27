@@ -5,27 +5,6 @@ import (
 	"errors"
 )
 
-// Types
-//
-// Int64:      0x00 XX XX XX XX XX XX XX XX
-//             where
-//               XX .. XX = 64-bit big-endian integer
-// Bytes:      0x01 XX XX XX XX XX XX XX XX YY .. YY
-//             where
-//               XX .. XX = 64-bit big-endian integer (length)
-//               YY .. YY = variable-length byte array
-// Uint64:     0x03 XX XX XX XX XX XX XX XX
-//             where
-//               XX .. XX = 64-bit big-endian integer
-// Variant:    0x04 XX YY .. YY
-//             where
-//               XX = 8-bit unsigned integer
-//               YY .. YY = variable-length ELRPC message object
-// Any:        0x04 XX XX XX XX XX XX XX XX YY .. YY
-//             where
-//               XX .. XX = 64-bit big-endian integer (length)
-//               YY .. YY = variable-length byte array representing another message
-
 const (
 	TagUint8   = 0x01
 	TagUint16  = 0x02
