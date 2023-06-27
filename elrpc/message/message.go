@@ -27,11 +27,17 @@ import (
 //               YY .. YY = variable-length byte array representing another message
 
 const (
-	TagInt64   = 0x00
-	TagBytes   = 0x01
-	TagUint64  = 0x02
-	TagVariant = 0x03
-	TagAny     = 0x04
+	TagUint8   = 0x01
+	TagUint16  = 0x02
+	TagUint32  = 0x03
+	TagUint64  = 0x04
+	TagInt8    = 0x05
+	TagInt16   = 0x06
+	TagInt64   = 0x07
+	TagInt32   = 0x08
+	TagBytes   = 0x09
+	TagVariant = 0x0a
+	TagAny     = 0x0b
 )
 
 var (

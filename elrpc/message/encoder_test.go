@@ -15,7 +15,7 @@ func TestEncoder_EncodeInt64(t *testing.T) {
 	}
 
 	want := []byte{
-		0x00,                                           // type tag (int64)
+		0x07,                                           // type tag (int64)
 		0x1a, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x7a, 0x8b, // value
 	}
 	got := enc.Buffer()
@@ -32,7 +32,7 @@ func TestEncoder_EncodeUint64(t *testing.T) {
 	}
 
 	want := []byte{
-		0x02,                                           // type tag (uint64)
+		0x04,                                           // type tag (uint64)
 		0xfa, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x7a, 0x8b, // value
 	}
 	got := enc.Buffer()
@@ -49,7 +49,7 @@ func TestEncoder_EncodeBytes(t *testing.T) {
 	}
 
 	want := []byte{
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, // length = 10
 		0x4b, 0x6f, 0x6e, 0x6e, 0x69, 0x63, 0x68, 0x69, 0x77, 0x61, // value = "Konnichiwa"
 	}
@@ -67,7 +67,7 @@ func TestEncoder_EncodeString(t *testing.T) {
 	}
 
 	want := []byte{
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, // length = 10
 		0x4b, 0x6f, 0x6e, 0x6e, 0x69, 0x63, 0x68, 0x69, 0x77, 0x61, // value = "Konnichiwa"
 	}
@@ -85,7 +85,7 @@ func TestEncoder_EncodeVariant(t *testing.T) {
 	}
 
 	want := []byte{
-		0x03, // type tag (variant)
+		0x0a, // type tag (variant)
 		0xef, // value
 	}
 	got := enc.Buffer()
@@ -108,9 +108,9 @@ func TestEncoder_EncodeAny(t *testing.T) {
 	}
 
 	want := []byte{
-		0x04,                                           // type tag (any)
+		0x0b,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b, // length = ?
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length =2
 		0x59, 0x6f, // value
 	}

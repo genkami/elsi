@@ -28,7 +28,7 @@ func TestDecodeLength_insufficientBuf(t *testing.T) {
 
 func TestDecoder_DecodeInt64(t *testing.T) {
 	buf := []byte{
-		0x00,                                           // type tag (int64)
+		0x07,                                           // type tag (int64)
 		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
 	}
 	dec := message.NewDecoder(buf)
@@ -44,7 +44,7 @@ func TestDecoder_DecodeInt64(t *testing.T) {
 }
 
 func TestDecoder_DecodeInt64_insufficientBuf(t *testing.T) {
-	buf := []byte{0x00, 0x12, 0x34, 0x56, 0x78}
+	buf := []byte{0x07, 0x12, 0x34, 0x56, 0x78}
 	dec := message.NewDecoder(buf)
 	_, err := dec.DecodeInt64()
 	if err != message.ErrInsufficientBuf {
@@ -66,7 +66,7 @@ func TestDecoder_DecodeInt64_typeMismatch(t *testing.T) {
 
 func TestDecoder_DecodeUint64(t *testing.T) {
 	buf := []byte{
-		0x02,                                           // type tag (uint64)
+		0x04,                                           // type tag (uint64)
 		0xf2, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
 	}
 	dec := message.NewDecoder(buf)
@@ -82,7 +82,7 @@ func TestDecoder_DecodeUint64(t *testing.T) {
 }
 
 func TestDecoder_DecodeUint64_insufficientBuf(t *testing.T) {
-	buf := []byte{0x02, 0xf2, 0x34, 0x56, 0x78}
+	buf := []byte{0x04, 0xf2, 0x34, 0x56, 0x78}
 	dec := message.NewDecoder(buf)
 	_, err := dec.DecodeUint64()
 	if err != message.ErrInsufficientBuf {
@@ -104,7 +104,7 @@ func TestDecoder_DecodeUint64_typeMismatch(t *testing.T) {
 
 func TestDecoder_DecodeBytes(t *testing.T) {
 	buf := []byte{
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length = 10
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // value = "Hello"
 	}
@@ -122,7 +122,7 @@ func TestDecoder_DecodeBytes(t *testing.T) {
 
 func TestDecoder_DecodeBytes_insufficientBuf_length(t *testing.T) {
 	buf := []byte{
-		0x01,                         // type tag (bytes)
+		0x09,                         // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, // length
 	}
 	dec := message.NewDecoder(buf)
@@ -134,7 +134,7 @@ func TestDecoder_DecodeBytes_insufficientBuf_length(t *testing.T) {
 
 func TestDecoder_DecodeBytes_insufficientBuf_body(t *testing.T) {
 	buf := []byte{
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length = 10
 		0x48, 0x65, 0x6c, 0x6c, // value = "Hell"
 	}
@@ -160,7 +160,7 @@ func TestDecoder_DecodeBytes_typeMismatch(t *testing.T) {
 
 func TestDecoder_DecodeString(t *testing.T) {
 	buf := []byte{
-		0x01,                                           // type tag (bytes)
+		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length = 10
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // value = "Hello"
 	}
@@ -178,7 +178,7 @@ func TestDecoder_DecodeString(t *testing.T) {
 
 func TestDecoder_DecodeVariant(t *testing.T) {
 	buf := []byte{
-		0x03, // type tag (variant)
+		0x0a, // type tag (variant)
 		0xab, // value
 	}
 	dec := message.NewDecoder(buf)
@@ -194,7 +194,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 }
 
 func TestDecoder_DecodeVariant_insufficientBuf(t *testing.T) {
-	buf := []byte{0x03}
+	buf := []byte{0x0a}
 	dec := message.NewDecoder(buf)
 	_, err := dec.DecodeVariant()
 	if err != message.ErrInsufficientBuf {
@@ -216,9 +216,9 @@ func TestDecoder_DecodeVariant_typeMismatch(t *testing.T) {
 
 func TestDecoder_DecodeAny(t *testing.T) {
 	buf := []byte{
-		0x04,                                           // type tag (any)
+		0x0b,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
-		0x00,                                           // type tag (int64)
+		0x07,                                           // type tag (int64)
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value
 	}
 
@@ -242,7 +242,7 @@ func TestDecoder_DecodeAny(t *testing.T) {
 
 func TestDecoder_DecodeAny_insufficientBuf_length(t *testing.T) {
 	buf := []byte{
-		0x04,                         // type tag (any)
+		0x0b,                         // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, // length
 	}
 	dec := message.NewDecoder(buf)
@@ -254,9 +254,9 @@ func TestDecoder_DecodeAny_insufficientBuf_length(t *testing.T) {
 
 func TestDecoder_DecodeAny_insufficientBuf_body(t *testing.T) {
 	buf := []byte{
-		0x04,                                           // type tag (any)
+		0x0b,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
-		0x00,                               // type tag (int64)
+		0x07,                               // type tag (int64)
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, // value
 	}
 	dec := message.NewDecoder(buf)
