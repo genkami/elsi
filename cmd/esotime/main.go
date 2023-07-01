@@ -46,6 +46,9 @@ func main() {
 	stream := expimpl.NewStream(hs)
 	exp.ImportStream(rt, stream)
 
+	file := expimpl.NewFile(hs)
+	exp.ImportFile(rt, file)
+
 	// TODO: use UseWorld
 
 	err := rt.Start()

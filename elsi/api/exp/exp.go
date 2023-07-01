@@ -79,10 +79,10 @@ func ImportStream(rt types.Runtime, stream Stream) {
 }
 
 const (
-	OpenModeCreate = 0
-	OpenModeRead   = 1
-	OpenModeWrite  = 2
-	OpenModeAppend = 4
+	OpenModeCreate = 1
+	OpenModeRead   = 2
+	OpenModeWrite  = 4
+	OpenModeAppend = 3
 )
 
 type File interface {
