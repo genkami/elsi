@@ -133,7 +133,7 @@ func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder
 }
 
 type methodCaller struct {
-	rt types.Runtime
+	rt       types.Runtime
 	moduleID uint32
 	methodID uint32
 }
@@ -145,7 +145,7 @@ type MethodCaller0[R message.Message] struct {
 func NewMethodCaller0[R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller0[R] {
 	return &MethodCaller0[R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -175,7 +175,7 @@ type MethodCaller1[T1, R message.Message] struct {
 func NewMethodCaller1[T1, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller1[T1, R] {
 	return &MethodCaller1[T1, R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -211,7 +211,7 @@ type MethodCaller2[T1, T2, R message.Message] struct {
 func NewMethodCaller2[T1, T2, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller2[T1, T2, R] {
 	return &MethodCaller2[T1, T2, R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -251,7 +251,7 @@ type MethodCaller3[T1, T2, T3, R message.Message] struct {
 func NewMethodCaller3[T1, T2, T3, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller3[T1, T2, T3, R] {
 	return &MethodCaller3[T1, T2, T3, R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -295,7 +295,7 @@ type MethodCaller4[T1, T2, T3, T4, R message.Message] struct {
 func NewMethodCaller4[T1, T2, T3, T4, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller4[T1, T2, T3, T4, R] {
 	return &MethodCaller4[T1, T2, T3, T4, R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -343,7 +343,7 @@ type MethodCaller5[T1, T2, T3, T4, T5, R message.Message] struct {
 func NewMethodCaller5[T1, T2, T3, T4, T5, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller5[T1, T2, T3, T4, T5, R] {
 	return &MethodCaller5[T1, T2, T3, T4, T5, R]{
 		methodCaller: methodCaller{
-			rt: rt,
+			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},

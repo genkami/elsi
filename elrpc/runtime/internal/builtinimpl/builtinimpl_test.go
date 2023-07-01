@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
-	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/elrpctest"
+	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/runtime/internal/builtinimpl"
 	"golang.org/x/exp/slog"
 )
