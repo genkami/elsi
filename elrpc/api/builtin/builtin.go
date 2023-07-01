@@ -116,12 +116,12 @@ func (m *MethodResult) ZeroMessage() message.Message {
 
 type Exporter interface {
 	PollMethodCall() (*MethodCall, error)
-	SendResult(*MethodResult) (*message.Void, error)
+	SendResult(*MethodResult) (message.Void, error)
 }
 
 func ImportExporter(instance types.Instance, e Exporter) {
 	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, helpers.TypedHandler0[*MethodCall](e.PollMethodCall))
-	instance.Use(ModuleID, MethodID_Exporter_SendResult, helpers.TypedHandler1[*MethodResult, *message.Void](e.SendResult))
+	instance.Use(ModuleID, MethodID_Exporter_SendResult, helpers.TypedHandler1[*MethodResult, message.Void](e.SendResult))
 }
 
 type Exports struct{}

@@ -55,17 +55,17 @@ func (e *Exporter) PollMethodCall() (*builtin.MethodCall, error) {
 	return call, nil
 }
 
-func (e *Exporter) SendResult(m *builtin.MethodResult) (*message.Void, error) {
+func (e *Exporter) SendResult(m *builtin.MethodResult) (message.Void, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	ch, ok := e.waiters[m.CallID]
 	if !ok {
 		e.logger.Error("no such call", slog.Uint64("call_id", m.CallID))
-		return nil, &message.Error{
+		return message.Void{}, &message.Error{
 			Code:    builtin.CodeNotFound,
 			Message: "no such method call",
 		}
 	}
 	ch <- CallResult{m.RetVal}
-	return &message.Void{}, nil
+	return message.Void{}, nil
 }

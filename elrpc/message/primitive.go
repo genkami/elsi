@@ -2,6 +2,8 @@ package message
 
 type Void struct{}
 
+var _ Message = Void{}
+
 func (Void) UnmarshalELRPC(dec *Decoder) error {
 	return nil
 }
