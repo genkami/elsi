@@ -12,6 +12,11 @@ var (
 		Code:     builtin.CodeNotFound,
 		Message:  "no such handle",
 	}
+	errInvalidHandleType = &message.Error{
+		ModuleID: builtin.ModuleID,
+		Code:     builtin.CodeNotFound,
+		Message:  "invalid handle type",
+	}
 	errUnsupported = &message.Error{
 		ModuleID: exp.ModuleID,
 		Code:     exp.CodeUnsupported,

@@ -94,17 +94,17 @@ func ImportFile(rt types.Runtime, file File) {
 }
 
 const (
-	StdinID  = 0x0000_0000
-	StdoutID = 0x0000_0001
-	StderrID = 0x0000_0002
+	HandleTypeStdin  = 0x00
+	HandleTypeStdout = 0x01
+	HandleTypeStderr = 0x02
 )
 
 type Stdio interface {
-	OpenStdHandle(id *message.Uint64) (*Handle, error)
+	OpenStdHandle(handleType *message.Uint8) (*Handle, error)
 }
 
 func ImportStdio(rt types.Runtime, stdio Stdio) {
-	rt.Use(ModuleID, MethodID_Stdio_OpenStdHandle, apibuilder.HostHandler1[*message.Uint64, *Handle](stdio.OpenStdHandle))
+	rt.Use(ModuleID, MethodID_Stdio_OpenStdHandle, apibuilder.HostHandler1[*message.Uint8, *Handle](stdio.OpenStdHandle))
 }
 
 type ServerRequest struct {
