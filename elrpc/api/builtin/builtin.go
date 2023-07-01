@@ -33,11 +33,11 @@ func (m *MethodCall) UnmarshalELRPC(dec *message.Decoder) error {
 	if err != nil {
 		return err
 	}
-	modID, err := dec.DecodeUint64()
+	modID, err := dec.DecodeUint32()
 	if err != nil {
 		return err
 	}
-	methodID, err := dec.DecodeUint64()
+	methodID, err := dec.DecodeUint32()
 	if err != nil {
 		return err
 	}
@@ -46,9 +46,8 @@ func (m *MethodCall) UnmarshalELRPC(dec *message.Decoder) error {
 		return err
 	}
 	m.CallID = callID
-	// TODO: uint32
-	m.ModuleID = uint32(modID)
-	m.MethodID = uint32(methodID)
+	m.ModuleID = modID
+	m.MethodID = methodID
 	m.Args = args
 	return nil
 }
@@ -58,12 +57,11 @@ func (m *MethodCall) MarshalELRPC(enc *message.Encoder) error {
 	if err != nil {
 		return err
 	}
-	// TODO: uint32
-	err = enc.EncodeUint64(uint64(m.ModuleID))
+	err = enc.EncodeUint32(m.ModuleID)
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeUint64(uint64(m.MethodID))
+	err = enc.EncodeUint32(m.MethodID)
 	if err != nil {
 		return err
 	}
