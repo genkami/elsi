@@ -179,6 +179,24 @@ func TestEncoder_EncodeString(t *testing.T) {
 	}
 }
 
+func TestEncoder_EncodeArrayLen(t *testing.T) {
+	enc := message.NewEncoder()
+	err := enc.EncodeArrayLen(0xabcdef0123456789)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []byte{
+		0x0a,                                           // type tag (array)
+		0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, // length
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+
+	}
+}
+
 func TestEncoder_EncodeVariant(t *testing.T) {
 	enc := message.NewEncoder()
 	err := enc.EncodeVariant(0xef)
@@ -187,7 +205,7 @@ func TestEncoder_EncodeVariant(t *testing.T) {
 	}
 
 	want := []byte{
-		0x0a, // type tag (variant)
+		0x0b, // type tag (variant)
 		0xef, // value
 	}
 	got := enc.Buffer()
@@ -210,7 +228,7 @@ func TestEncoder_EncodeAny(t *testing.T) {
 	}
 
 	want := []byte{
-		0x0b,                                           // type tag (any)
+		0x0c,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b, // length = ?
 		0x09,                                           // type tag (bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length =2

@@ -145,6 +145,18 @@ func (d *Decoder) DecodeString() (string, error) {
 	return string(val), nil
 }
 
+func (d *Decoder) DecodeArrayLen() (uint64, error) {
+	if len(d.buf) < 9 {
+		return 0, ErrInsufficientBuf
+	}
+	if d.buf[0] != TagArray {
+		return 0, ErrTypeMismatch
+	}
+	val := endian.Uint64(d.buf[1:])
+	d.buf = d.buf[9:]
+	return val, nil
+}
+
 func (d *Decoder) DecodeVariant() (uint8, error) {
 	if len(d.buf) < 2 {
 		return 0, ErrInsufficientBuf

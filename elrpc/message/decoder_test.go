@@ -368,9 +368,79 @@ func TestDecoder_DecodeString(t *testing.T) {
 	}
 }
 
+func TestDecoder_DecodeArrayLen(t *testing.T) {
+	buf := []byte{
+		0x0a,                                           // type tag (array)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // length = 3
+		0x01, 0xab, // [0]: uint8 0x0ab
+		0x06, 0xff, 0xff, // [1]: int16 -1
+		0x09,                                           // [2]: bytes
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // [2].length = 5
+		0x48, 0x65, 0x6c, 0x6c, 0x6f, // [2].value = "Hello"
+	}
+	dec := message.NewDecoder(buf)
+	gotLen, err := dec.DecodeArrayLen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotLen != 3 {
+		t.Errorf("want length 3 but got %d", gotLen)
+	}
+	got0, err := dec.DecodeUint8()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got0 != 0xab {
+		t.Errorf("want 0xab but got 0x%x", got0)
+	}
+	got1, err := dec.DecodeInt16()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got1 != -1 {
+		t.Errorf("want -1 but got %d", got1)
+	}
+	got2, err := dec.DecodeString()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got2 != "Hello" {
+		t.Errorf("want \"Hello\" but got %q", got2)
+	}
+}
+
+func TestDecoder_DecodeArrayLen_insufficientBuf(t *testing.T) {
+	buf := []byte{
+		0x0a,                   // type tag (array)
+		0x00, 0x00, 0x00, 0x03, // length
+	}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeArrayLen()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeArrayLen_typeMismatch(t *testing.T) {
+	buf := []byte{
+		0xff,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // length = 3
+		0x01, 0xab, // [0]: uint8 0x0ab
+		0x06, 0xff, 0xff, // [1]: int16 -1
+		0x09,                                           // [2]: bytes
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // [2].length = 5
+		0x48, 0x65, 0x6c, 0x6c, 0x6f, // [2].value = "Hello"
+	}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeArrayLen()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
 func TestDecoder_DecodeVariant(t *testing.T) {
 	buf := []byte{
-		0x0a, // type tag (variant)
+		0x0b, // type tag (variant)
 		0xab, // value
 	}
 	dec := message.NewDecoder(buf)
@@ -386,7 +456,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 }
 
 func TestDecoder_DecodeVariant_insufficientBuf(t *testing.T) {
-	buf := []byte{0x0a}
+	buf := []byte{0x0b}
 	dec := message.NewDecoder(buf)
 	_, err := dec.DecodeVariant()
 	if err != message.ErrInsufficientBuf {
@@ -408,7 +478,7 @@ func TestDecoder_DecodeVariant_typeMismatch(t *testing.T) {
 
 func TestDecoder_DecodeAny(t *testing.T) {
 	buf := []byte{
-		0x0b,                                           // type tag (any)
+		0x0c,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
 		0x08,                                           // type tag (int64)
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value
@@ -434,7 +504,7 @@ func TestDecoder_DecodeAny(t *testing.T) {
 
 func TestDecoder_DecodeAny_insufficientBuf_length(t *testing.T) {
 	buf := []byte{
-		0x0b,                         // type tag (any)
+		0x0c,                         // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, // length
 	}
 	dec := message.NewDecoder(buf)
@@ -446,7 +516,7 @@ func TestDecoder_DecodeAny_insufficientBuf_length(t *testing.T) {
 
 func TestDecoder_DecodeAny_insufficientBuf_body(t *testing.T) {
 	buf := []byte{
-		0x0b,                                           // type tag (any)
+		0x0c,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
 		0x07,                               // type tag (int64)
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, // value
@@ -455,5 +525,20 @@ func TestDecoder_DecodeAny_insufficientBuf_body(t *testing.T) {
 	_, err := dec.DecodeAny()
 	if err != message.ErrInsufficientBuf {
 		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeAny_typeMismatch(t *testing.T) {
+	buf := []byte{
+		0xff,                                           // type tag (any)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
+		0x08,                                           // type tag (int64)
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value
+	}
+
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeAny()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
 	}
 }

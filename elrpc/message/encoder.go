@@ -74,6 +74,12 @@ func (e *Encoder) EncodeString(val string) error {
 	return e.EncodeBytes([]byte(val))
 }
 
+func (e *Encoder) EncodeArrayLen(val uint64) error {
+	e.buf = append(e.buf, TagArray)
+	e.buf = endian.AppendUint64(e.buf, val)
+	return nil
+}
+
 func (e *Encoder) EncodeVariant(val uint8) error {
 	e.buf = append(e.buf, TagVariant, val)
 	return nil

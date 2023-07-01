@@ -15,8 +15,9 @@ const (
 	TagInt32   = 0x07
 	TagInt64   = 0x08
 	TagBytes   = 0x09
-	TagVariant = 0x0a
-	TagAny     = 0x0b
+	TagArray   = 0x0a
+	TagVariant = 0x0b
+	TagAny     = 0x0c
 )
 
 var (
