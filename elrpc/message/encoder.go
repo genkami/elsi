@@ -80,7 +80,7 @@ func (e *Encoder) EncodeArrayLen(val uint64) error {
 	return nil
 }
 
-func (e *Encoder) EncodeVariant(val uint8) error {
+func (e *Encoder) EncodeVariantTag(val uint8) error {
 	e.buf = append(e.buf, TagVariant, val)
 	return nil
 }

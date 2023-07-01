@@ -444,7 +444,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 		0xab, // value
 	}
 	dec := message.NewDecoder(buf)
-	got, err := dec.DecodeVariant()
+	got, err := dec.DecodeVariantTag()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,7 +458,7 @@ func TestDecoder_DecodeVariant(t *testing.T) {
 func TestDecoder_DecodeVariant_insufficientBuf(t *testing.T) {
 	buf := []byte{0x0b}
 	dec := message.NewDecoder(buf)
-	_, err := dec.DecodeVariant()
+	_, err := dec.DecodeVariantTag()
 	if err != message.ErrInsufficientBuf {
 		t.Errorf("want ErrInsufficientBuf but got %s", err)
 	}
@@ -470,7 +470,7 @@ func TestDecoder_DecodeVariant_typeMismatch(t *testing.T) {
 		0xab, // value
 	}
 	dec := message.NewDecoder(buf)
-	_, err := dec.DecodeVariant()
+	_, err := dec.DecodeVariantTag()
 	if err != message.ErrTypeMismatch {
 		t.Errorf("want ErrTypeMismatch but got %s", err)
 	}

@@ -199,7 +199,7 @@ func TestEncoder_EncodeArrayLen(t *testing.T) {
 
 func TestEncoder_EncodeVariant(t *testing.T) {
 	enc := message.NewEncoder()
-	err := enc.EncodeVariant(0xef)
+	err := enc.EncodeVariantTag(0xef)
 	if err != nil {
 		t.Fatal(err)
 	}

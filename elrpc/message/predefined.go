@@ -106,7 +106,7 @@ type Option[T Message] struct {
 }
 
 func (o *Option[T]) UnmarshalELRPC(dec *Decoder) error {
-	vtag, err := dec.DecodeVariant()
+	vtag, err := dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (o *Option[T]) UnmarshalELRPC(dec *Decoder) error {
 func (o *Option[T]) MarshalELRPC(enc *Encoder) error {
 	var err error
 	if o.IsSome {
-		err = enc.EncodeVariant(0)
+		err = enc.EncodeVariantTag(0)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (o *Option[T]) MarshalELRPC(enc *Encoder) error {
 		}
 		return nil
 	} else {
-		return enc.EncodeVariant(1)
+		return enc.EncodeVariantTag(1)
 	}
 }
 
@@ -153,7 +153,7 @@ type Result[T, U Message] struct {
 }
 
 func (e *Result[T, U]) UnmarshalELRPC(dec *Decoder) error {
-	vtag, err := dec.DecodeVariant()
+	vtag, err := dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (e *Result[T, U]) UnmarshalELRPC(dec *Decoder) error {
 func (e *Result[T, U]) MarshalELRPC(enc *Encoder) error {
 	var err error
 	if e.IsOk {
-		err = enc.EncodeVariant(0)
+		err = enc.EncodeVariantTag(0)
 		if err != nil {
 			return err
 		}
@@ -196,7 +196,7 @@ func (e *Result[T, U]) MarshalELRPC(enc *Encoder) error {
 		}
 		return nil
 	} else {
-		err = enc.EncodeVariant(1)
+		err = enc.EncodeVariantTag(1)
 		if err != nil {
 			return err
 		}

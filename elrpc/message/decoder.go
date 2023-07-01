@@ -157,7 +157,7 @@ func (d *Decoder) DecodeArrayLen() (uint64, error) {
 	return val, nil
 }
 
-func (d *Decoder) DecodeVariant() (uint8, error) {
+func (d *Decoder) DecodeVariantTag() (uint8, error) {
 	if len(d.buf) < 2 {
 		return 0, ErrInsufficientBuf
 	}

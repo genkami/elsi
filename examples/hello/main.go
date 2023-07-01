@@ -50,7 +50,7 @@ func doPing() error {
 		return err
 	}
 
-	vt, err := dec.DecodeVariant()
+	vt, err := dec.DecodeVariantTag()
 	switch vt {
 	case 0:
 		gotNonce, err := dec.DecodeInt64()
@@ -103,7 +103,7 @@ func doAdd() error {
 		return err
 	}
 
-	vt, err := dec.DecodeVariant()
+	vt, err := dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func doDiv(x, y int64) func() error {
 			return err
 		}
 
-		vtag, err := dec.DecodeVariant()
+		vtag, err := dec.DecodeVariantTag()
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func doWriteFile() error {
 		return err
 	}
 
-	vtag, err := dec.DecodeVariant()
+	vtag, err := dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func doTestExport() error {
 		return err
 	}
 
-	vtag, err := dec.DecodeVariant()
+	vtag, err := dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ pollLoop:
 			return err
 		}
 
-		vtag, err := dec.DecodeVariant()
+		vtag, err := dec.DecodeVariantTag()
 		if err != nil {
 			return err
 		}
@@ -345,7 +345,7 @@ pollLoop:
 	if err != nil {
 		return err
 	}
-	err = enc.EncodeVariant(0)
+	err = enc.EncodeVariantTag(0)
 	if err != nil {
 		return err
 	}
@@ -369,7 +369,7 @@ pollLoop:
 		return err
 	}
 
-	vtag, err = dec.DecodeVariant()
+	vtag, err = dec.DecodeVariantTag()
 	if err != nil {
 		return err
 	}
