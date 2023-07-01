@@ -1,5 +1,5 @@
-// Package experimental implements elsi.experimental module.
-package experimental
+// Package exp implements elsi.exp module.
+package exp
 
 import (
 	"github.com/genkami/elsi/elrpc/apibuilder"
