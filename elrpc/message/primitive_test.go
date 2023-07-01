@@ -318,3 +318,208 @@ func TestInt64_ZeroMessage(t *testing.T) {
 		t.Errorf("want Int64 but got %T", got)
 	}
 }
+
+func TestBytes_UnmarshalELRPC(t *testing.T) {
+	buf := []byte{
+		0x09,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length
+		0x12, 0x34, 0x56, 0x78, 0x9a, // value
+	}
+	dec := message.NewDecoder(buf)
+	var v message.Bytes
+	err := v.UnmarshalELRPC(dec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{0x12, 0x34, 0x56, 0x78, 0x9a}
+	got := v.Value
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestBytes_MarshalELRPC(t *testing.T) {
+	v := message.Bytes{Value: []byte{0x12, 0x34, 0x56, 0x78, 0x9a}}
+	enc := message.NewEncoder()
+	err := v.MarshalELRPC(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		0x09,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length
+		0x12, 0x34, 0x56, 0x78, 0x9a, // value
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestBytes_ZeroMessage(t *testing.T) {
+	var v message.Bytes
+	got := v.ZeroMessage()
+	if _, ok := got.(*message.Bytes); !ok {
+		t.Errorf("want Bytes but got %T", got)
+	}
+}
+
+func TestString_UnmarshalELRPC(t *testing.T) {
+	buf := []byte{
+		0x09,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length
+		'h', 'e', 'l', 'l', 'o', // value
+	}
+	dec := message.NewDecoder(buf)
+	var v message.String
+	err := v.UnmarshalELRPC(dec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "hello"
+	got := v.Value
+	if want != got {
+		t.Errorf("want %q but got %q", want, got)
+	}
+}
+
+func TestString_MarshalELRPC(t *testing.T) {
+	v := message.String{Value: "hello"}
+	enc := message.NewEncoder()
+	err := v.MarshalELRPC(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		0x09,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // length
+		'h', 'e', 'l', 'l', 'o', // value
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestString_ZeroMessage(t *testing.T) {
+	var v message.String
+	got := v.ZeroMessage()
+	if _, ok := got.(*message.String); !ok {
+		t.Errorf("want String but got %T", got)
+	}
+}
+
+func TestArray_UnmarshalELRPC(t *testing.T) {
+	buf := []byte{
+		0x0a,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length
+		0x01, 0xaa, // [0]: uint8 0xaa
+		0x01, 0xbb, // [1]: uint8 0xbb
+	}
+	dec := message.NewDecoder(buf)
+	var v message.Array[*message.Uint8]
+	err := v.UnmarshalELRPC(dec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []*message.Uint8{
+		{Value: 0xaa},
+		{Value: 0xbb},
+	}
+	got := v.Items
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestArray_UnmarshalELRPC_typeMismatch(t *testing.T) {
+	buf := []byte{
+		0x0a,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length
+		0x01, 0xaa, // [0]: uint8 0xaa
+		0x02, 0xbb, 0xbb, // [1]: uint16 0xbbbb (type mismatch)
+	}
+	dec := message.NewDecoder(buf)
+	var v message.Array[*message.Uint8]
+	err := v.UnmarshalELRPC(dec)
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err.Error())
+	}
+}
+
+func TestArray_MarshalELRPC(t *testing.T) {
+	v := message.Array[*message.Uint8]{
+		Items: []*message.Uint8{
+			{Value: 0xaa},
+			{Value: 0xbb},
+		},
+	}
+	enc := message.NewEncoder()
+	err := v.MarshalELRPC(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		0x0a,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // length
+		0x01, 0xaa, // [0]: uint8 0xaa
+		0x01, 0xbb, // [1]: uint8 0xbb
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestArray_ZeroMessage(t *testing.T) {
+	var v message.Array[message.Void]
+	got := v.ZeroMessage()
+	if _, ok := got.(*message.Array[message.Void]); !ok {
+		t.Errorf("want Array but got %T", got)
+	}
+}
+
+func TestAny_UnmarshalELRPC(t *testing.T) {
+	buf := []byte{
+		0x0c,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // length
+		0x02, 0xab, 0xcd, // uint16 0xabcd
+	}
+	dec := message.NewDecoder(buf)
+	var v message.Any
+	err := v.UnmarshalELRPC(dec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{0x02, 0xab, 0xcd}
+	got := v.Raw
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestAny_MarshalELRPC(t *testing.T) {
+	v := message.Any{Raw: []byte{0x02, 0xab, 0xcd}}
+	enc := message.NewEncoder()
+	err := v.MarshalELRPC(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{
+		0x0c,                                           // type tag
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // length
+		0x02, 0xab, 0xcd, // uint16 0xabcd
+	}
+	got := enc.Buffer()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestAny_ZeroMessage(t *testing.T) {
+	var v message.Any
+	got := v.ZeroMessage()
+	if _, ok := got.(*message.Any); !ok {
+		t.Errorf("want Any but got %T", got)
+	}
+}
