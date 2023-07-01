@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"github.com/genkami/elsi/elrpc/helpers"
+	"github.com/genkami/elsi/elrpc/apibuilder"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/types"
 )
@@ -118,8 +118,8 @@ type Exporter interface {
 }
 
 func ImportExporter(rt types.Runtime, e Exporter) {
-	rt.Use(ModuleID, MethodID_Exporter_PollMethodCall, helpers.TypedHandler0[*MethodCall](e.PollMethodCall))
-	rt.Use(ModuleID, MethodID_Exporter_SendResult, helpers.TypedHandler1[*MethodResult, message.Void](e.SendResult))
+	rt.Use(ModuleID, MethodID_Exporter_PollMethodCall, apibuilder.TypedHandler0[*MethodCall](e.PollMethodCall))
+	rt.Use(ModuleID, MethodID_Exporter_SendResult, apibuilder.TypedHandler1[*MethodResult, message.Void](e.SendResult))
 }
 
 type Exports struct{}

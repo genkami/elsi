@@ -2,7 +2,7 @@
 package experimental
 
 import (
-	"github.com/genkami/elsi/elrpc/helpers"
+	"github.com/genkami/elsi/elrpc/apibuilder"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/types"
 )
@@ -70,9 +70,9 @@ type Stream interface {
 }
 
 func ImportStream(rt types.Runtime, stream Stream) {
-	rt.Use(ModuleID, MethodID_Stream_Read, helpers.TypedHandler2[*Handle, *message.Uint64, *message.Bytes](stream.Read))
-	rt.Use(ModuleID, MethodID_Stream_Write, helpers.TypedHandler2[*Handle, *message.Bytes, *message.Uint64](stream.Write))
-	rt.Use(ModuleID, MethodID_Stream_Close, helpers.TypedHandler1[*Handle, *message.Void](stream.Close))
+	rt.Use(ModuleID, MethodID_Stream_Read, apibuilder.TypedHandler2[*Handle, *message.Uint64, *message.Bytes](stream.Read))
+	rt.Use(ModuleID, MethodID_Stream_Write, apibuilder.TypedHandler2[*Handle, *message.Bytes, *message.Uint64](stream.Write))
+	rt.Use(ModuleID, MethodID_Stream_Close, apibuilder.TypedHandler1[*Handle, *message.Void](stream.Close))
 }
 
 const (
@@ -87,7 +87,7 @@ type File interface {
 }
 
 func ImportFile(rt types.Runtime, file File) {
-	rt.Use(ModuleID, MethodID_File_Open, helpers.TypedHandler2[*message.String, *message.Uint64, *Handle](file.Open))
+	rt.Use(ModuleID, MethodID_File_Open, apibuilder.TypedHandler2[*message.String, *message.Uint64, *Handle](file.Open))
 }
 
 const (
@@ -101,7 +101,7 @@ type Stdio interface {
 }
 
 func ImportStdio(rt types.Runtime, stdio Stdio) {
-	rt.Use(ModuleID, MethodID_Stdio_OpenStdHandle, helpers.TypedHandler1[*message.Uint64, *Handle](stdio.OpenStdHandle))
+	rt.Use(ModuleID, MethodID_Stdio_OpenStdHandle, apibuilder.TypedHandler1[*message.Uint64, *Handle](stdio.OpenStdHandle))
 }
 
 type ServerRequest struct {
@@ -215,8 +215,8 @@ type HTTP interface {
 }
 
 func ImportHTTP(rt types.Runtime, http HTTP) {
-	rt.Use(ModuleID, MethodID_HTTP_Listen, helpers.TypedHandler1[*message.String, *HTTPListener](http.Listen))
-	rt.Use(ModuleID, MethodID_HTTP_CloseListener, helpers.TypedHandler1[*HTTPListener, *message.Void](http.CloseListener))
-	rt.Use(ModuleID, MethodID_HTTP_PollRequest, helpers.TypedHandler1[*HTTPListener, *ServerRequest](http.PollRequest))
-	rt.Use(ModuleID, MethodID_HTTP_SendResponse, helpers.TypedHandler2[*message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
+	rt.Use(ModuleID, MethodID_HTTP_Listen, apibuilder.TypedHandler1[*message.String, *HTTPListener](http.Listen))
+	rt.Use(ModuleID, MethodID_HTTP_CloseListener, apibuilder.TypedHandler1[*HTTPListener, *message.Void](http.CloseListener))
+	rt.Use(ModuleID, MethodID_HTTP_PollRequest, apibuilder.TypedHandler1[*HTTPListener, *ServerRequest](http.PollRequest))
+	rt.Use(ModuleID, MethodID_HTTP_SendResponse, apibuilder.TypedHandler2[*message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
 }

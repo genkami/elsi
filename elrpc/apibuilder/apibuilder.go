@@ -1,5 +1,4 @@
-// TODO: move this to somewhere else
-package helpers
+package apibuilder
 
 import (
 	"github.com/genkami/elsi/elrpc/message"

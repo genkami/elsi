@@ -1,7 +1,7 @@
 package x
 
 import (
-	"github.com/genkami/elsi/elrpc/helpers"
+	"github.com/genkami/elsi/elrpc/apibuilder"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/types"
 )
@@ -16,11 +16,11 @@ type TODO interface {
 }
 
 func ImportTODO(rt types.Runtime, todo TODO) {
-	rt.Use(ModuleID, MethodID_TODO_Ping, helpers.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
-	rt.Use(ModuleID, MethodID_TODO_Add, helpers.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
-	rt.Use(ModuleID, MethodID_TODO_Div, helpers.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
-	rt.Use(ModuleID, MethodID_TODO_WriteFile, helpers.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
-	rt.Use(ModuleID, MethodID_TODO_TestExport, helpers.TypedHandler0[*message.Void](todo.TestExport))
+	rt.Use(ModuleID, MethodID_TODO_Ping, apibuilder.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
+	rt.Use(ModuleID, MethodID_TODO_Add, apibuilder.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
+	rt.Use(ModuleID, MethodID_TODO_Div, apibuilder.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
+	rt.Use(ModuleID, MethodID_TODO_WriteFile, apibuilder.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
+	rt.Use(ModuleID, MethodID_TODO_TestExport, apibuilder.TypedHandler0[*message.Void](todo.TestExport))
 }
 
 type PingRequest struct {

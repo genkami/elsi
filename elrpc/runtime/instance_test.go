@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
+	"github.com/genkami/elsi/elrpc/apibuilder"
 	"github.com/genkami/elsi/elrpc/elrpctest"
-	"github.com/genkami/elsi/elrpc/helpers"
 	"github.com/genkami/elsi/elrpc/message"
 	"github.com/genkami/elsi/elrpc/runtime"
 	"github.com/genkami/elsi/elrpc/types"
@@ -33,7 +33,7 @@ type HostAPI interface {
 }
 
 func ImportHostAPI(rt types.Runtime, h HostAPI) {
-	rt.Use(ModuleID, MethodID_HostAPI_Ping, helpers.TypedHandler1[*message.String, *message.String](h.Ping))
+	rt.Use(ModuleID, MethodID_HostAPI_Ping, apibuilder.TypedHandler1[*message.String, *message.String](h.Ping))
 }
 
 type hostAPIImpl struct {
@@ -49,12 +49,12 @@ type GuestAPI interface {
 }
 
 type guestAPIImpl struct {
-	pingImpl *helpers.MethodCaller1[*message.String, *message.String]
+	pingImpl *apibuilder.MethodCaller1[*message.String, *message.String]
 }
 
 func ExportGuestAPI(rt types.Runtime) GuestAPI {
 	return &guestAPIImpl{
-		pingImpl: helpers.NewMethodCaller1[*message.String, *message.String](rt, ModuleID, MethodID_GuestAPI_Ping),
+		pingImpl: apibuilder.NewMethodCaller1[*message.String, *message.String](rt, ModuleID, MethodID_GuestAPI_Ping),
 	}
 }
 

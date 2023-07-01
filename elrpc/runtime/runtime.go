@@ -16,7 +16,7 @@ import (
 
 type Runtime struct {
 	logger   *slog.Logger
-	handlers map[uint64]types.Handler // a map from full method ID to its handler
+	handlers map[uint64]types.HostHandler // a map from full method ID to its handler
 	guest    Guest
 	exporter *builtinimpl.Exporter
 	wg       sync.WaitGroup
@@ -28,7 +28,7 @@ func NewRuntime(logger *slog.Logger, guest Guest) *Runtime {
 	exporter := builtinimpl.NewExporter(logger)
 	rt := &Runtime{
 		logger:   logger,
-		handlers: make(map[uint64]types.Handler),
+		handlers: make(map[uint64]types.HostHandler),
 		guest:    guest,
 		exporter: exporter,
 	}
@@ -36,7 +36,7 @@ func NewRuntime(logger *slog.Logger, guest Guest) *Runtime {
 	return rt
 }
 
-func (rt *Runtime) Use(moduleID, methodID uint32, h types.Handler) {
+func (rt *Runtime) Use(moduleID, methodID uint32, h types.HostHandler) {
 	rt.handlers[fullID(moduleID, methodID)] = h
 }
 
