@@ -19,6 +19,9 @@ const (
 	MethodID_HTTP_CloseListener  = 0x0000_0031
 	MethodID_HTTP_PollRequest    = 0x0000_0032
 	MethodID_HTTP_SendResponse   = 0x0000_0033
+
+	// Attempted to do an unsupported operation on a handle (e.g. write to a read-only handle).
+	CodeUnsupported = 0x0000_0001
 )
 
 type Imports struct {
@@ -66,13 +69,13 @@ func (h *Handle) ZeroMessage() message.Message {
 type Stream interface {
 	Read(handle *Handle, size *message.Uint64) (*message.Bytes, error)
 	Write(handle *Handle, buf *message.Bytes) (*message.Uint64, error)
-	Close(handle *Handle) (*message.Void, error)
+	Close(handle *Handle) (message.Void, error)
 }
 
 func ImportStream(rt types.Runtime, stream Stream) {
 	rt.Use(ModuleID, MethodID_Stream_Read, apibuilder.HostHandler2[*Handle, *message.Uint64, *message.Bytes](stream.Read))
 	rt.Use(ModuleID, MethodID_Stream_Write, apibuilder.HostHandler2[*Handle, *message.Bytes, *message.Uint64](stream.Write))
-	rt.Use(ModuleID, MethodID_Stream_Close, apibuilder.HostHandler1[*Handle, *message.Void](stream.Close))
+	rt.Use(ModuleID, MethodID_Stream_Close, apibuilder.HostHandler1[*Handle, message.Void](stream.Close))
 }
 
 const (
