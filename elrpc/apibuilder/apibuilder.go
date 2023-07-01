@@ -7,11 +7,15 @@ import (
 
 type HostHandler0[R message.Message] func() (R, error)
 
+var _ types.HostHandler = HostHandler0[message.Message](nil)
+
 func (h HostHandler0[R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	return h()
 }
 
 type HostHandler1[T1, R message.Message] func(T1) (R, error)
+
+var _ types.HostHandler = HostHandler1[message.Message, message.Message](nil)
 
 func (h HostHandler1[T1, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
@@ -24,6 +28,8 @@ func (h HostHandler1[T1, R]) HandleRequest(dec *message.Decoder) (message.Messag
 }
 
 type HostHandler2[T1, T2, R message.Message] func(T1, T2) (R, error)
+
+var _ types.HostHandler = HostHandler2[message.Message, message.Message, message.Message](nil)
 
 func (h HostHandler2[T1, T2, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
@@ -42,6 +48,8 @@ func (h HostHandler2[T1, T2, R]) HandleRequest(dec *message.Decoder) (message.Me
 }
 
 type HostHandler3[T1, T2, T3, R message.Message] func(T1, T2, T3) (R, error)
+
+var _ types.HostHandler = HostHandler3[message.Message, message.Message, message.Message, message.Message](nil)
 
 func (h HostHandler3[T1, T2, T3, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
@@ -66,6 +74,8 @@ func (h HostHandler3[T1, T2, T3, R]) HandleRequest(dec *message.Decoder) (messag
 }
 
 type HostHandler4[T1, T2, T3, T4, R message.Message] func(T1, T2, T3, T4) (R, error)
+
+var _ types.HostHandler = HostHandler4[message.Message, message.Message, message.Message, message.Message, message.Message](nil)
 
 func (h HostHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
@@ -96,6 +106,8 @@ func (h HostHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *message.Decoder) (me
 }
 
 type HostHandler5[T1, T2, T3, T4, T5, R message.Message] func(T1, T2, T3, T4, T5) (R, error)
+
+var _ types.HostHandler = HostHandler5[message.Message, message.Message, message.Message, message.Message, message.Message, message.Message](nil)
 
 func (h HostHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
@@ -153,7 +165,8 @@ func NewGuestDelegator0[R message.Message](rt types.Runtime, moduleID, methodID 
 
 func (c *GuestDelegator0[R]) Call() (R, error) {
 	var zero R
-	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{})
+	enc := message.NewEncoder()
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}
