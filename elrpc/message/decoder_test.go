@@ -26,39 +26,97 @@ func TestDecodeLength_insufficientBuf(t *testing.T) {
 	}
 }
 
-func TestDecoder_DecodeInt64(t *testing.T) {
-	buf := []byte{
-		0x07,                                           // type tag (int64)
-		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
-	}
+func TestDecoder_DecodeUint8(t *testing.T) {
+	buf := []byte{0x01, 0xab}
 	dec := message.NewDecoder(buf)
-	got, err := dec.DecodeInt64()
+	got, err := dec.DecodeUint8()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var want int64 = 0x123456789abcdef1
+	var want uint8 = 0xab
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
 }
 
-func TestDecoder_DecodeInt64_insufficientBuf(t *testing.T) {
-	buf := []byte{0x07, 0x12, 0x34, 0x56, 0x78}
+func TestDecoder_DecodeUint8_insufficientBuf(t *testing.T) {
+	buf := []byte{0x01}
 	dec := message.NewDecoder(buf)
-	_, err := dec.DecodeInt64()
+	_, err := dec.DecodeUint8()
 	if err != message.ErrInsufficientBuf {
 		t.Errorf("want ErrInsufficientBuf but got %s", err)
 	}
 }
 
-func TestDecoder_DecodeInt64_typeMismatch(t *testing.T) {
-	buf := []byte{
-		0xff,                                           // type tag (int64)
-		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
-	}
+func TestDecoder_DecodeUint8_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab}
 	dec := message.NewDecoder(buf)
-	_, err := dec.DecodeInt64()
+	_, err := dec.DecodeUint8()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeUint16(t *testing.T) {
+	buf := []byte{0x02, 0xab, 0xcd}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeUint16()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want uint16 = 0xabcd
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeUint16_insufficientBuf(t *testing.T) {
+	buf := []byte{0x02, 0xab}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeUint16()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeUint16_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab, 0xcd}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeUint16()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeUint32(t *testing.T) {
+	buf := []byte{0x03, 0xab, 0xcd, 0xef, 0x12}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeUint32()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want uint32 = 0xabcdef12
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeUint32_insufficientBuf(t *testing.T) {
+	buf := []byte{0x03, 0xab, 0xcd, 0xef}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeUint32()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeUint32_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab, 0xcd, 0xef, 0x12}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeUint32()
 	if err != message.ErrTypeMismatch {
 		t.Errorf("want ErrTypeMismatch but got %s", err)
 	}
@@ -97,6 +155,140 @@ func TestDecoder_DecodeUint64_typeMismatch(t *testing.T) {
 	}
 	dec := message.NewDecoder(buf)
 	_, err := dec.DecodeUint64()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt8(t *testing.T) {
+	buf := []byte{0x05, 0xab}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeInt8()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want int8 = -0x55
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeInt8_insufficientBuf(t *testing.T) {
+	buf := []byte{0x05}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt8()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt8_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt8()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt16(t *testing.T) {
+	buf := []byte{0x06, 0xab, 0xcd}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeInt16()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want int16 = -0x5433
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeInt16_insufficientBuf(t *testing.T) {
+	buf := []byte{0x06, 0xab}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt16()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt16_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab, 0xcd}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt16()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt32(t *testing.T) {
+	buf := []byte{0x07, 0xab, 0xcd, 0xef, 0x12}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeInt32()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want int32 = -0x543210ee
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeInt32_insufficientBuf(t *testing.T) {
+	buf := []byte{0x07, 0xab, 0xcd, 0xef}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt32()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt32_typeMismatch(t *testing.T) {
+	buf := []byte{0xff, 0xab, 0xcd, 0xef, 0x12}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt32()
+	if err != message.ErrTypeMismatch {
+		t.Errorf("want ErrTypeMismatch but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt64(t *testing.T) {
+	buf := []byte{
+		0x08,                                           // type tag (int64)
+		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
+	}
+	dec := message.NewDecoder(buf)
+	got, err := dec.DecodeInt64()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want int64 = 0x123456789abcdef1
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestDecoder_DecodeInt64_insufficientBuf(t *testing.T) {
+	buf := []byte{0x08, 0x12, 0x34, 0x56, 0x78}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt64()
+	if err != message.ErrInsufficientBuf {
+		t.Errorf("want ErrInsufficientBuf but got %s", err)
+	}
+}
+
+func TestDecoder_DecodeInt64_typeMismatch(t *testing.T) {
+	buf := []byte{
+		0xff,                                           // type tag (int64)
+		0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf1, // value
+	}
+	dec := message.NewDecoder(buf)
+	_, err := dec.DecodeInt64()
 	if err != message.ErrTypeMismatch {
 		t.Errorf("want ErrTypeMismatch but got %s", err)
 	}
@@ -218,7 +410,7 @@ func TestDecoder_DecodeAny(t *testing.T) {
 	buf := []byte{
 		0x0b,                                           // type tag (any)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, // length = 9
-		0x07,                                           // type tag (int64)
+		0x08,                                           // type tag (int64)
 		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value
 	}
 

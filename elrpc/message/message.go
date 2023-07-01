@@ -12,8 +12,8 @@ const (
 	TagUint64  = 0x04
 	TagInt8    = 0x05
 	TagInt16   = 0x06
-	TagInt64   = 0x07
-	TagInt32   = 0x08
+	TagInt32   = 0x07
+	TagInt64   = 0x08
 	TagBytes   = 0x09
 	TagVariant = 0x0a
 	TagAny     = 0x0b
