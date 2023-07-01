@@ -1,13 +1,13 @@
 package builtinimpl_test
 
 import (
-	"errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
+	"github.com/genkami/elsi/elrpc/message/msgtest"
 	"github.com/genkami/elsi/elrpc/runtime/internal/builtinimpl"
 	"golang.org/x/exp/slog"
 )
@@ -26,13 +26,7 @@ func TestExporterImpl_PollMethodCall_notfound(t *testing.T) {
 	if err == nil {
 		t.Errorf("want error but got nil")
 	}
-	var elErr *message.Error
-	if !errors.As(err, &elErr) {
-		t.Errorf("want *message.Error but got %T (%s)", err, err.Error())
-	}
-	if elErr.Code != builtin.CodeNotFound {
-		t.Errorf("want CodeNotFound but got %s", err.Error())
-	}
+	msgtest.AssertError(t, err, builtin.ModuleID, builtin.CodeNotFound)
 }
 
 func TestExporterImpl_PollMethodCall_found(t *testing.T) {
