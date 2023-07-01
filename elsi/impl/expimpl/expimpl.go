@@ -22,4 +22,9 @@ var (
 		Code:     exp.CodeUnsupported,
 		Message:  "unsupported operation",
 	}
+	errNoRequest = &message.Error{
+		ModuleID: builtin.ModuleID,
+		Code:     builtin.CodeNotFound,
+		Message:  "no request",
+	}
 )

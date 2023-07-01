@@ -16,9 +16,8 @@ const (
 	MethodID_File_Open           = 0x0000_0010
 	MethodID_Stdio_OpenStdHandle = 0x0000_0020
 	MethodID_HTTP_Listen         = 0x0000_0030
-	MethodID_HTTP_CloseListener  = 0x0000_0031
-	MethodID_HTTP_PollRequest    = 0x0000_0032
-	MethodID_HTTP_SendResponse   = 0x0000_0033
+	MethodID_HTTP_PollRequest    = 0x0000_0031
+	MethodID_HTTP_SendResponse   = 0x0000_0032
 
 	// Attempted to do an unsupported operation on a handle (e.g. write to a read-only handle).
 	CodeUnsupported = 0x0000_0001
@@ -162,6 +161,7 @@ func (r *ServerRequest) ZeroMessage() message.Message {
 
 type ServerResponseHeader struct {
 	Status int64
+	// TODO: headers
 }
 
 func (r *ServerResponseHeader) UnmarshalELRPC(dec *message.Decoder) error {
@@ -185,41 +185,14 @@ func (r *ServerResponseHeader) ZeroMessage() message.Message {
 	return &ServerResponseHeader{}
 }
 
-type HTTPListener struct {
-	ID uint64
-}
-
-func (s *HTTPListener) UnmarshalELRPC(dec *message.Decoder) error {
-	var err error
-	s.ID, err = dec.DecodeUint64()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *HTTPListener) MarshalELRPC(enc *message.Encoder) error {
-	err := enc.EncodeUint64(s.ID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *HTTPListener) ZeroMessage() message.Message {
-	return &HTTPListener{}
-}
-
 type HTTP interface {
-	Listen(addrAndPort *message.String) (*HTTPListener, error)
-	CloseListener(listener *HTTPListener) (*message.Void, error)
-	PollRequest(server *HTTPListener) (*ServerRequest, error)
-	SendResponseHeader(reqID *message.Uint64, header *ServerResponseHeader) (*Handle, error)
+	Listen(addrAndPort *message.String) (*Handle, error)
+	PollRequest(handle *Handle) (*ServerRequest, error)
+	SendResponseHeader(handle *Handle, reqID *message.Uint64, header *ServerResponseHeader) (*Handle, error)
 }
 
 func ImportHTTP(rt types.Runtime, http HTTP) {
-	rt.Use(ModuleID, MethodID_HTTP_Listen, apibuilder.HostHandler1[*message.String, *HTTPListener](http.Listen))
-	rt.Use(ModuleID, MethodID_HTTP_CloseListener, apibuilder.HostHandler1[*HTTPListener, *message.Void](http.CloseListener))
-	rt.Use(ModuleID, MethodID_HTTP_PollRequest, apibuilder.HostHandler1[*HTTPListener, *ServerRequest](http.PollRequest))
-	rt.Use(ModuleID, MethodID_HTTP_SendResponse, apibuilder.HostHandler2[*message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
+	rt.Use(ModuleID, MethodID_HTTP_Listen, apibuilder.HostHandler1[*message.String, *Handle](http.Listen))
+	rt.Use(ModuleID, MethodID_HTTP_PollRequest, apibuilder.HostHandler1[*Handle, *ServerRequest](http.PollRequest))
+	rt.Use(ModuleID, MethodID_HTTP_SendResponse, apibuilder.HostHandler3[*Handle, *message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
 }
