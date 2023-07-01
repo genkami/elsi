@@ -123,8 +123,9 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 		return &Resp{
 			IsOk: false,
 			Err: &message.Error{
-				Code:    builtin.CodeInvalidRequest,
-				Message: "failed to decode method ID",
+				ModuleID: builtin.ModuleID,
+				Code:     builtin.CodeInvalidRequest,
+				Message:  "failed to decode method ID",
 			},
 		}
 	}
@@ -133,8 +134,9 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 		return &Resp{
 			IsOk: false,
 			Err: &message.Error{
-				Code:    builtin.CodeUnimplemented,
-				Message: fmt.Sprintf("method %X is not implemented", mID),
+				ModuleID: builtin.ModuleID,
+				Code:     builtin.CodeUnimplemented,
+				Message:  fmt.Sprintf("method %X is not implemented", mID),
 			},
 		}
 	}
@@ -147,8 +149,9 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 		return &Resp{
 			IsOk: false,
 			Err: &message.Error{
-				Code:    builtin.CodeInternal,
-				Message: err.Error(),
+				ModuleID: builtin.ModuleID,
+				Code:     builtin.CodeInternal,
+				Message:  err.Error(),
 			},
 		}
 	}

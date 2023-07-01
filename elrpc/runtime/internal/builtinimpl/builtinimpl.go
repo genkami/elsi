@@ -46,8 +46,9 @@ func (e *Exporter) PollMethodCall() (*builtin.MethodCall, error) {
 	defer e.mu.Unlock()
 	if len(e.callQueue) == 0 {
 		return nil, &message.Error{
-			Code:    builtin.CodeNotFound,
-			Message: "no method call",
+			ModuleID: builtin.ModuleID,
+			Code:     builtin.CodeNotFound,
+			Message:  "no method call",
 		}
 	}
 	call := e.callQueue[0]
@@ -62,8 +63,9 @@ func (e *Exporter) SendResult(m *builtin.MethodResult) (message.Void, error) {
 	if !ok {
 		e.logger.Error("no such call", slog.Uint64("call_id", m.CallID))
 		return message.Void{}, &message.Error{
-			Code:    builtin.CodeNotFound,
-			Message: "no such method call",
+			ModuleID: builtin.ModuleID,
+			Code:     builtin.CodeNotFound,
+			Message:  "no such method call",
 		}
 	}
 	ch <- CallResult{m.RetVal}

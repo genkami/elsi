@@ -123,27 +123,46 @@ func (e *Result[T, U]) ZeroMessage() Message {
 }
 
 type Error struct {
-	Code    uint64
-	Message string
+	ModuleID uint32
+	Code     uint32
+	Message  string
 }
 
 var _ Message = (*Error)(nil)
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("elrpc: error (code = %X): %s", e.Code, e.Message)
+	return fmt.Sprintf("elrpc: error (mod = %X, code = %X): %s", e.ModuleID, e.Code, e.Message)
 }
 
 func (e *Error) UnmarshalELRPC(dec *Decoder) error {
-	code, err := dec.DecodeUint64()
+	modID, err := dec.DecodeUint32()
 	if err != nil {
 		return err
 	}
+	code, err := dec.DecodeUint32()
+	if err != nil {
+		return err
+	}
+	msg, err := dec.DecodeString()
+	if err != nil {
+		return err
+	}
+	e.ModuleID = modID
 	e.Code = code
+	e.Message = msg
 	return nil
 }
 
 func (e *Error) MarshalELRPC(enc *Encoder) error {
-	err := enc.EncodeUint64(e.Code)
+	err := enc.EncodeUint32(e.ModuleID)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeUint32(e.Code)
+	if err != nil {
+		return err
+	}
+	err = enc.EncodeString(e.Message)
 	if err != nil {
 		return err
 	}
