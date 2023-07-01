@@ -7,6 +7,8 @@ type Option[T Message] struct {
 	Some   T
 }
 
+var _ Message = (*Option[Message])(nil)
+
 func (o *Option[T]) UnmarshalELRPC(dec *Decoder) error {
 	vtag, err := dec.DecodeVariantTag()
 	if err != nil {
@@ -48,11 +50,17 @@ func (o *Option[T]) MarshalELRPC(enc *Encoder) error {
 	}
 }
 
+func (o *Option[T]) ZeroMessage() Message {
+	return &Option[T]{}
+}
+
 type Result[T, U Message] struct {
 	IsOk bool
 	Ok   T
 	Err  U
 }
+
+var _ Message = (*Result[Message, Message])(nil)
 
 func (e *Result[T, U]) UnmarshalELRPC(dec *Decoder) error {
 	vtag, err := dec.DecodeVariantTag()
@@ -118,6 +126,8 @@ type Error struct {
 	Code    uint64
 	Message string
 }
+
+var _ Message = (*Error)(nil)
 
 func (e *Error) Error() string {
 	return fmt.Sprintf("elrpc: error (code = %X): %s", e.Code, e.Message)

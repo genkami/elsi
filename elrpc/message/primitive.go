@@ -202,6 +202,8 @@ type Bytes struct {
 	Value []byte
 }
 
+var _ Message = (*Bytes)(nil)
+
 func (b *Bytes) UnmarshalELRPC(dec *Decoder) error {
 	val, err := dec.DecodeBytes()
 	if err != nil {
@@ -223,6 +225,8 @@ type String struct {
 	Value string
 }
 
+var _ Message = (*String)(nil)
+
 func (s *String) UnmarshalELRPC(dec *Decoder) error {
 	val, err := dec.DecodeString()
 	if err != nil {
@@ -240,9 +244,53 @@ func (s *String) ZeroMessage() Message {
 	return &String{}
 }
 
+type Array[T Message] struct {
+	Items []T
+}
+
+var _ Message = (*Array[Message])(nil)
+
+func (a *Array[T]) UnmarshalELRPC(dec *Decoder) error {
+	length, err := dec.DecodeArrayLen()
+	if err != nil {
+		return err
+	}
+	items := make([]T, length)
+	for i := uint64(0); i < length; i++ {
+		item := NewMessage[T]()
+		err = item.UnmarshalELRPC(dec)
+		if err != nil {
+			return err
+		}
+		items[i] = item.(T)
+	}
+	a.Items = items
+	return nil
+}
+
+func (a *Array[T]) MarshalELRPC(enc *Encoder) error {
+	err := enc.EncodeArrayLen(uint64(len(a.Items)))
+	if err != nil {
+		return err
+	}
+	for _, item := range a.Items {
+		err = item.MarshalELRPC(enc)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *Array[T]) ZeroMessage() Message {
+	return &Array[T]{}
+}
+
 type Any struct {
 	Raw []byte
 }
+
+var _ Message = (*Any)(nil)
 
 func (a *Any) UnmarshalELRPC(dec *Decoder) error {
 	b, err := dec.DecodeAny()
