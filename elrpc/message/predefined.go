@@ -131,6 +131,9 @@ type Error struct {
 var _ Message = (*Error)(nil)
 
 func (e *Error) Error() string {
+	if e == nil {
+		return "elrpc: error (nil)"
+	}
 	return fmt.Sprintf("elrpc: error (mod = %X, code = %X): %s", e.ModuleID, e.Code, e.Message)
 }
 

@@ -27,6 +27,7 @@ var _ types.Instance = (*Instance)(nil)
 func NewInstance(logger *slog.Logger, mod Module) *Instance {
 	exporter := builtinimpl.NewExporter(logger)
 	instance := &Instance{
+		logger:   logger,
 		handlers: make(map[uint64]types.Handler),
 		mod:      mod,
 		exporter: exporter,
@@ -54,7 +55,6 @@ func (instance *Instance) Start() error {
 			instance.logger.Error("worker error", slog.String("error", err.Error()))
 		}
 	}()
-	// TODO: negotiation required?
 	return nil
 }
 
@@ -118,7 +118,18 @@ func (instance *Instance) serverWorker() error {
 
 func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[message.Message, *message.Error] {
 	type Resp = message.Result[message.Message, *message.Error]
-	mID, err := dec.DecodeUint64()
+	modID, err := dec.DecodeUint32()
+	if err != nil {
+		return &Resp{
+			IsOk: false,
+			Err: &message.Error{
+				ModuleID: builtin.ModuleID,
+				Code:     builtin.CodeInvalidRequest,
+				Message:  "failed to decode module ID",
+			},
+		}
+	}
+	methodID, err := dec.DecodeUint32()
 	if err != nil {
 		return &Resp{
 			IsOk: false,
@@ -129,14 +140,15 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 			},
 		}
 	}
-	handler, ok := instance.handlers[mID]
+	fullMethodID := fullID(modID, methodID)
+	handler, ok := instance.handlers[fullMethodID]
 	if !ok {
 		return &Resp{
 			IsOk: false,
 			Err: &message.Error{
 				ModuleID: builtin.ModuleID,
 				Code:     builtin.CodeUnimplemented,
-				Message:  fmt.Sprintf("method %X is not implemented", mID),
+				Message:  fmt.Sprintf("method %X in module %X is not implemented", modID, methodID),
 			},
 		}
 	}

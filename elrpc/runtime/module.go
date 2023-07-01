@@ -19,6 +19,7 @@ func NewPipeStream(in io.Reader, out io.Writer) Stream {
 	return &pipeStream{in, out}
 }
 
+// TODO: rename?
 type Module interface {
 	Stream() Stream
 	Start() error
@@ -29,6 +30,8 @@ type ProcessModule struct {
 	cmd    *exec.Cmd
 	stream Stream
 }
+
+var _ Module = (*ProcessModule)(nil)
 
 func NewProcessModule(name string, args ...string) *ProcessModule {
 	cmd := exec.Command(name, args...)

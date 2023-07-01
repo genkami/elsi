@@ -1,4 +1,4 @@
-package msgtest
+package elrpctest
 
 import (
 	"errors"

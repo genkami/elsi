@@ -7,7 +7,7 @@ import (
 
 	"github.com/genkami/elsi/elrpc/api/builtin"
 	"github.com/genkami/elsi/elrpc/message"
-	"github.com/genkami/elsi/elrpc/message/msgtest"
+	"github.com/genkami/elsi/elrpc/elrpctest"
 	"github.com/genkami/elsi/elrpc/runtime/internal/builtinimpl"
 	"golang.org/x/exp/slog"
 )
@@ -28,7 +28,7 @@ var (
 func TestExporterImpl_PollMethodCall_notfound(t *testing.T) {
 	e := builtinimpl.NewExporter(logger)
 	_, err := e.PollMethodCall()
-	msgtest.AssertError(t, err, builtin.ModuleID, builtin.CodeNotFound)
+	elrpctest.AssertError(t, err, builtin.ModuleID, builtin.CodeNotFound)
 }
 
 func TestExporterImpl_PollMethodCall_found(t *testing.T) {
@@ -213,7 +213,7 @@ func TestExporterImpl_SendResult_err(t *testing.T) {
 		if r.RetVal.IsOk {
 			t.Fatalf("want error but got %#v", r.RetVal.Ok)
 		}
-		msgtest.AssertError(t, r.RetVal.Err, ModuleID, CodeFoo)
+		elrpctest.AssertError(t, r.RetVal.Err, ModuleID, CodeFoo)
 	case <-time.After(timeout):
 		t.Fatal("timeout")
 	}
