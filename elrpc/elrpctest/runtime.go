@@ -7,7 +7,7 @@ import (
 	"github.com/genkami/elsi/elrpc/runtime"
 )
 
-type TestModule struct {
+type TestGuest struct {
 	hostEnd  *pipeStream
 	guestEnd *pipeStream
 }
@@ -34,9 +34,9 @@ func (s *pipeStream) Close() error {
 	return s.w.Close()
 }
 
-var _ runtime.Module = (*TestModule)(nil)
+var _ runtime.Guest = (*TestGuest)(nil)
 
-func NewTestModule(t *testing.T) *TestModule {
+func NewTestGuest(t *testing.T) *TestGuest {
 	hostR, guestW, err := os.Pipe()
 	if err != nil {
 		t.Fatalf("failed to create a pipe: %s", err.Error())
@@ -47,29 +47,29 @@ func NewTestModule(t *testing.T) *TestModule {
 		guestW.Close()
 		t.Fatalf("failed to create a pipe: %s", err.Error())
 	}
-	return &TestModule{
+	return &TestGuest{
 		hostEnd:  &pipeStream{r: hostR, w: hostW},
 		guestEnd: &pipeStream{r: guestR, w: guestW},
 	}
 }
 
-func (m *TestModule) Stream() runtime.Stream {
-	return m.hostEnd
+func (g *TestGuest) Stream() runtime.Stream {
+	return g.hostEnd
 }
 
-func (m *TestModule) Start() error {
+func (g *TestGuest) Start() error {
 	return nil
 }
 
-func (m *TestModule) Wait() error {
+func (g *TestGuest) Wait() error {
 	return nil
 }
 
-func (m *TestModule) GuestStream() runtime.Stream {
-	return m.guestEnd
+func (g *TestGuest) GuestStream() runtime.Stream {
+	return g.guestEnd
 }
 
-func (m *TestModule) Close() {
-	m.hostEnd.Close()
-	m.guestEnd.Close()
+func (g *TestGuest) Close() {
+	g.hostEnd.Close()
+	g.guestEnd.Close()
 }

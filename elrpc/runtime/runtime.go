@@ -17,19 +17,19 @@ import (
 type Runtime struct {
 	logger   *slog.Logger
 	handlers map[uint64]types.Handler // a map from full method ID to its handler
-	mod      Module
+	guest    Guest
 	exporter *builtinimpl.Exporter
 	wg       sync.WaitGroup
 }
 
 var _ types.Runtime = (*Runtime)(nil)
 
-func NewRuntime(logger *slog.Logger, mod Module) *Runtime {
+func NewRuntime(logger *slog.Logger, guest Guest) *Runtime {
 	exporter := builtinimpl.NewExporter(logger)
 	rt := &Runtime{
 		logger:   logger,
 		handlers: make(map[uint64]types.Handler),
-		mod:      mod,
+		guest:    guest,
 		exporter: exporter,
 	}
 	_ = builtin.UseWorld(rt, exporter)
@@ -41,7 +41,7 @@ func (rt *Runtime) Use(moduleID, methodID uint32, h types.Handler) {
 }
 
 func (rt *Runtime) Start() error {
-	err := rt.mod.Start()
+	err := rt.guest.Start()
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (rt *Runtime) Start() error {
 		defer rt.wg.Done()
 		err := rt.serverWorker()
 		if err != nil {
-			// TODO: stop module
+			// TODO: stop guest
 			rt.logger.Error("worker error", slog.String("error", err.Error()))
 		}
 	}()
@@ -60,7 +60,7 @@ func (rt *Runtime) Start() error {
 
 func (rt *Runtime) Wait() error {
 	// TODO: any way to terminate instead of waiting?
-	err := rt.mod.Wait()
+	err := rt.guest.Wait()
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (rt *Runtime) Wait() error {
 
 func (rt *Runtime) serverWorker() error {
 	var err error
-	stream := rt.mod.Stream()
+	stream := rt.guest.Stream()
 	for {
 		rlenBuf := make([]byte, message.LengthSize)
 		_, err = io.ReadFull(stream, rlenBuf)

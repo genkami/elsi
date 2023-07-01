@@ -19,21 +19,20 @@ func NewPipeStream(in io.Reader, out io.Writer) Stream {
 	return &pipeStream{in, out}
 }
 
-// TODO: rename?
-type Module interface {
+type Guest interface {
 	Stream() Stream
 	Start() error
 	Wait() error
 }
 
-type ProcessModule struct {
+type ProcessGuest struct {
 	cmd    *exec.Cmd
 	stream Stream
 }
 
-var _ Module = (*ProcessModule)(nil)
+var _ Guest = (*ProcessGuest)(nil)
 
-func NewProcessModule(name string, args ...string) *ProcessModule {
+func NewProcessGuest(name string, args ...string) *ProcessGuest {
 	cmd := exec.Command(name, args...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -44,20 +43,20 @@ func NewProcessModule(name string, args ...string) *ProcessModule {
 		panic(err)
 	}
 	cmd.Stderr = os.Stderr
-	return &ProcessModule{
+	return &ProcessGuest{
 		cmd:    cmd,
 		stream: NewPipeStream(stdout, stdin),
 	}
 }
 
-func (m *ProcessModule) Stream() Stream {
+func (m *ProcessGuest) Stream() Stream {
 	return m.stream
 }
 
-func (m *ProcessModule) Start() error {
+func (m *ProcessGuest) Start() error {
 	return m.cmd.Start()
 }
 
-func (m *ProcessModule) Wait() error {
+func (m *ProcessGuest) Wait() error {
 	return m.cmd.Wait()
 }

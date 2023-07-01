@@ -27,8 +27,8 @@ func main() {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	mod := runtime.NewProcessModule(args[2], args[3:]...)
-	rt := runtime.NewRuntime(logger, mod)
+	guest := runtime.NewProcessGuest(args[2], args[3:]...)
+	rt := runtime.NewRuntime(logger, guest)
 	todo := &todoImpl{}
 	exports := x.UseWorld(rt, &x.Imports{
 		TODO: todo,

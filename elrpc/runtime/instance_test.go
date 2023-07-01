@@ -143,17 +143,17 @@ func TestInstance_callHostAPI(t *testing.T) {
 			hostImpl.pingImpl = tt.pingImpl
 
 			logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-			mod := elrpctest.NewTestModule(t)
-			defer mod.Close()
+			guest := elrpctest.NewTestGuest(t)
+			defer guest.Close()
 
-			rt := runtime.NewRuntime(logger, mod)
+			rt := runtime.NewRuntime(logger, guest)
 			ImportHostAPI(rt, hostImpl)
 			err := rt.Start()
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			s := mod.GuestStream()
+			s := guest.GuestStream()
 
 			// Call HostAPI.Ping
 			respDec := callHostAPI(t, s, tt.moduleID, tt.methodID, tt.req)
@@ -180,10 +180,10 @@ func TestInstance_callHostAPI(t *testing.T) {
 
 func TestInstance_callGuestAPI(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	mod := elrpctest.NewTestModule(t)
-	defer mod.Close()
+	guest := elrpctest.NewTestGuest(t)
+	defer guest.Close()
 
-	rt := runtime.NewRuntime(logger, mod)
+	rt := runtime.NewRuntime(logger, guest)
 	guestAPI := ExportGuestAPI(rt)
 	err := rt.Start()
 	if err != nil {
@@ -193,7 +193,7 @@ func TestInstance_callGuestAPI(t *testing.T) {
 	startPoll := make(chan struct{})
 	var eg errgroup.Group
 	eg.Go(func() error {
-		s := mod.GuestStream()
+		s := guest.GuestStream()
 
 		<-startPoll
 
