@@ -33,7 +33,7 @@ type HostAPI interface {
 }
 
 func ImportHostAPI(rt types.Runtime, h HostAPI) {
-	rt.Use(ModuleID, MethodID_HostAPI_Ping, apibuilder.TypedHandler1[*message.String, *message.String](h.Ping))
+	rt.Use(ModuleID, MethodID_HostAPI_Ping, apibuilder.HostHandler1[*message.String, *message.String](h.Ping))
 }
 
 type hostAPIImpl struct {
@@ -49,12 +49,12 @@ type GuestAPI interface {
 }
 
 type guestAPIImpl struct {
-	pingImpl *apibuilder.MethodCaller1[*message.String, *message.String]
+	pingImpl *apibuilder.GuestDelegator1[*message.String, *message.String]
 }
 
 func ExportGuestAPI(rt types.Runtime) GuestAPI {
 	return &guestAPIImpl{
-		pingImpl: apibuilder.NewMethodCaller1[*message.String, *message.String](rt, ModuleID, MethodID_GuestAPI_Ping),
+		pingImpl: apibuilder.NewGuestDelegator1[*message.String, *message.String](rt, ModuleID, MethodID_GuestAPI_Ping),
 	}
 }
 

@@ -16,11 +16,11 @@ type TODO interface {
 }
 
 func ImportTODO(rt types.Runtime, todo TODO) {
-	rt.Use(ModuleID, MethodID_TODO_Ping, apibuilder.TypedHandler1[*PingRequest, *PingResponse](todo.Ping))
-	rt.Use(ModuleID, MethodID_TODO_Add, apibuilder.TypedHandler1[*AddRequest, *AddResponse](todo.Add))
-	rt.Use(ModuleID, MethodID_TODO_Div, apibuilder.TypedHandler1[*DivRequest, *DivResponse](todo.Div))
-	rt.Use(ModuleID, MethodID_TODO_WriteFile, apibuilder.TypedHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
-	rt.Use(ModuleID, MethodID_TODO_TestExport, apibuilder.TypedHandler0[*message.Void](todo.TestExport))
+	rt.Use(ModuleID, MethodID_TODO_Ping, apibuilder.HostHandler1[*PingRequest, *PingResponse](todo.Ping))
+	rt.Use(ModuleID, MethodID_TODO_Add, apibuilder.HostHandler1[*AddRequest, *AddResponse](todo.Add))
+	rt.Use(ModuleID, MethodID_TODO_Div, apibuilder.HostHandler1[*DivRequest, *DivResponse](todo.Div))
+	rt.Use(ModuleID, MethodID_TODO_WriteFile, apibuilder.HostHandler1[*WriteFileRequest, *WriteFileResponse](todo.WriteFile))
+	rt.Use(ModuleID, MethodID_TODO_TestExport, apibuilder.HostHandler0[*message.Void](todo.TestExport))
 }
 
 type PingRequest struct {

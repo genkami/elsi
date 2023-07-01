@@ -118,8 +118,8 @@ type Exporter interface {
 }
 
 func ImportExporter(rt types.Runtime, e Exporter) {
-	rt.Use(ModuleID, MethodID_Exporter_PollMethodCall, apibuilder.TypedHandler0[*MethodCall](e.PollMethodCall))
-	rt.Use(ModuleID, MethodID_Exporter_SendResult, apibuilder.TypedHandler1[*MethodResult, message.Void](e.SendResult))
+	rt.Use(ModuleID, MethodID_Exporter_PollMethodCall, apibuilder.HostHandler0[*MethodCall](e.PollMethodCall))
+	rt.Use(ModuleID, MethodID_Exporter_SendResult, apibuilder.HostHandler1[*MethodResult, message.Void](e.SendResult))
 }
 
 type Exports struct{}

@@ -5,15 +5,15 @@ import (
 	"github.com/genkami/elsi/elrpc/types"
 )
 
-type TypedHandler0[R message.Message] func() (R, error)
+type HostHandler0[R message.Message] func() (R, error)
 
-func (h TypedHandler0[R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler0[R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	return h()
 }
 
-type TypedHandler1[T1, R message.Message] func(T1) (R, error)
+type HostHandler1[T1, R message.Message] func(T1) (R, error)
 
-func (h TypedHandler1[T1, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler1[T1, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
@@ -23,9 +23,9 @@ func (h TypedHandler1[T1, R]) HandleRequest(dec *message.Decoder) (message.Messa
 	return h(x1.(T1))
 }
 
-type TypedHandler2[T1, T2, R message.Message] func(T1, T2) (R, error)
+type HostHandler2[T1, T2, R message.Message] func(T1, T2) (R, error)
 
-func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler2[T1, T2, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
@@ -41,9 +41,9 @@ func (h TypedHandler2[T1, T2, R]) HandleRequest(dec *message.Decoder) (message.M
 	return h(x1.(T1), x2.(T2))
 }
 
-type TypedHandler3[T1, T2, T3, R message.Message] func(T1, T2, T3) (R, error)
+type HostHandler3[T1, T2, T3, R message.Message] func(T1, T2, T3) (R, error)
 
-func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler3[T1, T2, T3, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
@@ -65,9 +65,9 @@ func (h TypedHandler3[T1, T2, T3, R]) HandleRequest(dec *message.Decoder) (messa
 	return h(x1.(T1), x2.(T2), x3.(T3))
 }
 
-type TypedHandler4[T1, T2, T3, T4, R message.Message] func(T1, T2, T3, T4) (R, error)
+type HostHandler4[T1, T2, T3, T4, R message.Message] func(T1, T2, T3, T4) (R, error)
 
-func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
@@ -95,9 +95,9 @@ func (h TypedHandler4[T1, T2, T3, T4, R]) HandleRequest(dec *message.Decoder) (m
 	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4))
 }
 
-type TypedHandler5[T1, T2, T3, T4, T5, R message.Message] func(T1, T2, T3, T4, T5) (R, error)
+type HostHandler5[T1, T2, T3, T4, T5, R message.Message] func(T1, T2, T3, T4, T5) (R, error)
 
-func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
+func (h HostHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder) (message.Message, error) {
 	x1 := message.NewMessage[T1]()
 	err := x1.UnmarshalELRPC(dec)
 	if err != nil {
@@ -131,19 +131,19 @@ func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder
 	return h(x1.(T1), x2.(T2), x3.(T3), x4.(T4), x5.(T5))
 }
 
-type methodCaller struct {
+type delegator struct {
 	rt       types.Runtime
 	moduleID uint32
 	methodID uint32
 }
 
-type MethodCaller0[R message.Message] struct {
-	methodCaller
+type GuestDelegator0[R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller0[R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller0[R] {
-	return &MethodCaller0[R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator0[R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator0[R] {
+	return &GuestDelegator0[R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -151,7 +151,7 @@ func NewMethodCaller0[R message.Message](rt types.Runtime, moduleID, methodID ui
 	}
 }
 
-func (c *MethodCaller0[R]) Call() (R, error) {
+func (c *GuestDelegator0[R]) Call() (R, error) {
 	var zero R
 	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{})
 	if err != nil {
@@ -167,13 +167,13 @@ func (c *MethodCaller0[R]) Call() (R, error) {
 	return resp.(R), nil
 }
 
-type MethodCaller1[T1, R message.Message] struct {
-	methodCaller
+type GuestDelegator1[T1, R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller1[T1, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller1[T1, R] {
-	return &MethodCaller1[T1, R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator1[T1, R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator1[T1, R] {
+	return &GuestDelegator1[T1, R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -181,7 +181,7 @@ func NewMethodCaller1[T1, R message.Message](rt types.Runtime, moduleID, methodI
 	}
 }
 
-func (c *MethodCaller1[T1, R]) Call(x1 T1) (R, error) {
+func (c *GuestDelegator1[T1, R]) Call(x1 T1) (R, error) {
 	var zero R
 	enc := message.NewEncoder()
 	err := x1.MarshalELRPC(enc)
@@ -203,13 +203,13 @@ func (c *MethodCaller1[T1, R]) Call(x1 T1) (R, error) {
 	return resp.(R), nil
 }
 
-type MethodCaller2[T1, T2, R message.Message] struct {
-	methodCaller
+type GuestDelegator2[T1, T2, R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller2[T1, T2, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller2[T1, T2, R] {
-	return &MethodCaller2[T1, T2, R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator2[T1, T2, R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator2[T1, T2, R] {
+	return &GuestDelegator2[T1, T2, R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -217,7 +217,7 @@ func NewMethodCaller2[T1, T2, R message.Message](rt types.Runtime, moduleID, met
 	}
 }
 
-func (c *MethodCaller2[T1, T2, R]) Call(x1 T1, x2 T2) (R, error) {
+func (c *GuestDelegator2[T1, T2, R]) Call(x1 T1, x2 T2) (R, error) {
 	var zero R
 	enc := message.NewEncoder()
 	err := x1.MarshalELRPC(enc)
@@ -243,13 +243,13 @@ func (c *MethodCaller2[T1, T2, R]) Call(x1 T1, x2 T2) (R, error) {
 	return resp.(R), nil
 }
 
-type MethodCaller3[T1, T2, T3, R message.Message] struct {
-	methodCaller
+type GuestDelegator3[T1, T2, T3, R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller3[T1, T2, T3, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller3[T1, T2, T3, R] {
-	return &MethodCaller3[T1, T2, T3, R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator3[T1, T2, T3, R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator3[T1, T2, T3, R] {
+	return &GuestDelegator3[T1, T2, T3, R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -257,7 +257,7 @@ func NewMethodCaller3[T1, T2, T3, R message.Message](rt types.Runtime, moduleID,
 	}
 }
 
-func (c *MethodCaller3[T1, T2, T3, R]) Call(x1 T1, x2 T2, x3 T3) (R, error) {
+func (c *GuestDelegator3[T1, T2, T3, R]) Call(x1 T1, x2 T2, x3 T3) (R, error) {
 	var zero R
 	enc := message.NewEncoder()
 	err := x1.MarshalELRPC(enc)
@@ -287,13 +287,13 @@ func (c *MethodCaller3[T1, T2, T3, R]) Call(x1 T1, x2 T2, x3 T3) (R, error) {
 	return resp.(R), nil
 }
 
-type MethodCaller4[T1, T2, T3, T4, R message.Message] struct {
-	methodCaller
+type GuestDelegator4[T1, T2, T3, T4, R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller4[T1, T2, T3, T4, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller4[T1, T2, T3, T4, R] {
-	return &MethodCaller4[T1, T2, T3, T4, R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator4[T1, T2, T3, T4, R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator4[T1, T2, T3, T4, R] {
+	return &GuestDelegator4[T1, T2, T3, T4, R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -301,7 +301,7 @@ func NewMethodCaller4[T1, T2, T3, T4, R message.Message](rt types.Runtime, modul
 	}
 }
 
-func (c *MethodCaller4[T1, T2, T3, T4, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4) (R, error) {
+func (c *GuestDelegator4[T1, T2, T3, T4, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4) (R, error) {
 	var zero R
 	enc := message.NewEncoder()
 	err := x1.MarshalELRPC(enc)
@@ -335,13 +335,13 @@ func (c *MethodCaller4[T1, T2, T3, T4, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4) (R, 
 	return resp.(R), nil
 }
 
-type MethodCaller5[T1, T2, T3, T4, T5, R message.Message] struct {
-	methodCaller
+type GuestDelegator5[T1, T2, T3, T4, T5, R message.Message] struct {
+	delegator
 }
 
-func NewMethodCaller5[T1, T2, T3, T4, T5, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller5[T1, T2, T3, T4, T5, R] {
-	return &MethodCaller5[T1, T2, T3, T4, T5, R]{
-		methodCaller: methodCaller{
+func NewGuestDelegator5[T1, T2, T3, T4, T5, R message.Message](rt types.Runtime, moduleID, methodID uint32) *GuestDelegator5[T1, T2, T3, T4, T5, R] {
+	return &GuestDelegator5[T1, T2, T3, T4, T5, R]{
+		delegator: delegator{
 			rt:       rt,
 			moduleID: moduleID,
 			methodID: methodID,
@@ -349,7 +349,7 @@ func NewMethodCaller5[T1, T2, T3, T4, T5, R message.Message](rt types.Runtime, m
 	}
 }
 
-func (c *MethodCaller5[T1, T2, T3, T4, T5, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4, x5 T5) (R, error) {
+func (c *GuestDelegator5[T1, T2, T3, T4, T5, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4, x5 T5) (R, error) {
 	var zero R
 	enc := message.NewEncoder()
 	err := x1.MarshalELRPC(enc)
