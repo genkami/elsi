@@ -9,6 +9,10 @@ import (
 
 func AssertError(t *testing.T, err error, modID, code uint32) {
 	t.Helper()
+	if err == nil {
+		t.Errorf("want error (mod = %X, code = %X) but got nil", modID, code)
+		return
+	}
 	var msgErr *message.Error
 	if !errors.As(err, &msgErr) {
 		t.Errorf("want *message.Error but got %T (%s)", err, err.Error())
