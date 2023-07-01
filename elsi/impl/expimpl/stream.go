@@ -13,6 +13,10 @@ type Stream struct {
 
 var _ exp.Stream = (*Stream)(nil)
 
+func NewStream(hs *HandleSet) *Stream {
+	return &Stream{hs: hs}
+}
+
 func (s *Stream) Read(handle *exp.Handle, size *message.Uint64) (*message.Bytes, error) {
 	instance, ok := s.hs.Get(handle.ID)
 	if !ok {
