@@ -12,9 +12,9 @@ type Exports struct {
 	Greeter Greeter
 }
 
-func UseWorld(instance types.Instance, imports *Imports) *Exports {
-	ImportTODO(instance, imports.TODO)
+func UseWorld(rt types.Runtime, imports *Imports) *Exports {
+	ImportTODO(rt, imports.TODO)
 	return &Exports{
-		Greeter: ExportGreeter(instance),
+		Greeter: ExportGreeter(rt),
 	}
 }

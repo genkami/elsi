@@ -16,9 +16,9 @@ type greeterClient struct {
 
 var _ Greeter = &greeterClient{}
 
-func ExportGreeter(instance types.Instance) Greeter {
+func ExportGreeter(rt types.Runtime) Greeter {
 	return &greeterClient{
-		greetImpl: helpers.NewMethodCaller1[*message.Bytes, *message.Bytes](instance, ModuleID, MethodID_Greeter_Greet),
+		greetImpl: helpers.NewMethodCaller1[*message.Bytes, *message.Bytes](rt, ModuleID, MethodID_Greeter_Greet),
 	}
 }
 

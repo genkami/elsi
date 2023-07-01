@@ -30,11 +30,11 @@ type Imports struct {
 
 type Exports struct{}
 
-func UseWorld(instance types.Instance, imports *Imports) *Exports {
-	ImportStream(instance, imports.Stream)
-	ImportFile(instance, imports.File)
-	ImportStdio(instance, imports.Stdio)
-	ImportHTTP(instance, imports.HTTP)
+func UseWorld(rt types.Runtime, imports *Imports) *Exports {
+	ImportStream(rt, imports.Stream)
+	ImportFile(rt, imports.File)
+	ImportStdio(rt, imports.Stdio)
+	ImportHTTP(rt, imports.HTTP)
 	return &Exports{}
 }
 
@@ -69,10 +69,10 @@ type Stream interface {
 	Close(handle *Handle) (*message.Void, error)
 }
 
-func ImportStream(instance types.Instance, stream Stream) {
-	instance.Use(ModuleID, MethodID_Stream_Read, helpers.TypedHandler2[*Handle, *message.Uint64, *message.Bytes](stream.Read))
-	instance.Use(ModuleID, MethodID_Stream_Write, helpers.TypedHandler2[*Handle, *message.Bytes, *message.Uint64](stream.Write))
-	instance.Use(ModuleID, MethodID_Stream_Close, helpers.TypedHandler1[*Handle, *message.Void](stream.Close))
+func ImportStream(rt types.Runtime, stream Stream) {
+	rt.Use(ModuleID, MethodID_Stream_Read, helpers.TypedHandler2[*Handle, *message.Uint64, *message.Bytes](stream.Read))
+	rt.Use(ModuleID, MethodID_Stream_Write, helpers.TypedHandler2[*Handle, *message.Bytes, *message.Uint64](stream.Write))
+	rt.Use(ModuleID, MethodID_Stream_Close, helpers.TypedHandler1[*Handle, *message.Void](stream.Close))
 }
 
 const (
@@ -86,8 +86,8 @@ type File interface {
 	Open(path *message.String, mode *message.Uint64) (*Handle, error)
 }
 
-func ImportFile(instance types.Instance, file File) {
-	instance.Use(ModuleID, MethodID_File_Open, helpers.TypedHandler2[*message.String, *message.Uint64, *Handle](file.Open))
+func ImportFile(rt types.Runtime, file File) {
+	rt.Use(ModuleID, MethodID_File_Open, helpers.TypedHandler2[*message.String, *message.Uint64, *Handle](file.Open))
 }
 
 const (
@@ -100,8 +100,8 @@ type Stdio interface {
 	OpenStdHandle(id *message.Uint64) (*Handle, error)
 }
 
-func ImportStdio(instance types.Instance, stdio Stdio) {
-	instance.Use(ModuleID, MethodID_Stdio_OpenStdHandle, helpers.TypedHandler1[*message.Uint64, *Handle](stdio.OpenStdHandle))
+func ImportStdio(rt types.Runtime, stdio Stdio) {
+	rt.Use(ModuleID, MethodID_Stdio_OpenStdHandle, helpers.TypedHandler1[*message.Uint64, *Handle](stdio.OpenStdHandle))
 }
 
 type ServerRequest struct {
@@ -214,9 +214,9 @@ type HTTP interface {
 	SendResponseHeader(reqID *message.Uint64, header *ServerResponseHeader) (*Handle, error)
 }
 
-func ImportHTTP(instance types.Instance, http HTTP) {
-	instance.Use(ModuleID, MethodID_HTTP_Listen, helpers.TypedHandler1[*message.String, *HTTPListener](http.Listen))
-	instance.Use(ModuleID, MethodID_HTTP_CloseListener, helpers.TypedHandler1[*HTTPListener, *message.Void](http.CloseListener))
-	instance.Use(ModuleID, MethodID_HTTP_PollRequest, helpers.TypedHandler1[*HTTPListener, *ServerRequest](http.PollRequest))
-	instance.Use(ModuleID, MethodID_HTTP_SendResponse, helpers.TypedHandler2[*message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
+func ImportHTTP(rt types.Runtime, http HTTP) {
+	rt.Use(ModuleID, MethodID_HTTP_Listen, helpers.TypedHandler1[*message.String, *HTTPListener](http.Listen))
+	rt.Use(ModuleID, MethodID_HTTP_CloseListener, helpers.TypedHandler1[*HTTPListener, *message.Void](http.CloseListener))
+	rt.Use(ModuleID, MethodID_HTTP_PollRequest, helpers.TypedHandler1[*HTTPListener, *ServerRequest](http.PollRequest))
+	rt.Use(ModuleID, MethodID_HTTP_SendResponse, helpers.TypedHandler2[*message.Uint64, *ServerResponseHeader, *Handle](http.SendResponseHeader))
 }

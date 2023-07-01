@@ -117,14 +117,14 @@ type Exporter interface {
 	SendResult(*MethodResult) (message.Void, error)
 }
 
-func ImportExporter(instance types.Instance, e Exporter) {
-	instance.Use(ModuleID, MethodID_Exporter_PollMethodCall, helpers.TypedHandler0[*MethodCall](e.PollMethodCall))
-	instance.Use(ModuleID, MethodID_Exporter_SendResult, helpers.TypedHandler1[*MethodResult, message.Void](e.SendResult))
+func ImportExporter(rt types.Runtime, e Exporter) {
+	rt.Use(ModuleID, MethodID_Exporter_PollMethodCall, helpers.TypedHandler0[*MethodCall](e.PollMethodCall))
+	rt.Use(ModuleID, MethodID_Exporter_SendResult, helpers.TypedHandler1[*MethodResult, message.Void](e.SendResult))
 }
 
 type Exports struct{}
 
-func UseWorld(instance types.Instance, e Exporter) *Exports {
-	ImportExporter(instance, e)
+func UseWorld(rt types.Runtime, e Exporter) *Exports {
+	ImportExporter(rt, e)
 	return &Exports{}
 }

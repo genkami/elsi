@@ -28,18 +28,18 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	mod := runtime.NewProcessModule(args[2], args[3:]...)
-	instance := runtime.NewInstance(logger, mod)
+	rt := runtime.NewRuntime(logger, mod)
 	todo := &todoImpl{}
-	exports := x.UseWorld(instance, &x.Imports{
+	exports := x.UseWorld(rt, &x.Imports{
 		TODO: todo,
 	})
 	todo.greeter = exports.Greeter
-	err := instance.Start()
+	err := rt.Start()
 	if err != nil {
 		panic(err)
 	}
 
-	err = instance.Wait()
+	err = rt.Wait()
 	if err != nil {
 		panic(err)
 	}

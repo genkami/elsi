@@ -14,7 +14,7 @@ import (
 	"github.com/genkami/elsi/elrpc/types"
 )
 
-type Instance struct {
+type Runtime struct {
 	logger   *slog.Logger
 	handlers map[uint64]types.Handler // a map from full method ID to its handler
 	mod      Module
@@ -22,55 +22,55 @@ type Instance struct {
 	wg       sync.WaitGroup
 }
 
-var _ types.Instance = (*Instance)(nil)
+var _ types.Runtime = (*Runtime)(nil)
 
-func NewInstance(logger *slog.Logger, mod Module) *Instance {
+func NewRuntime(logger *slog.Logger, mod Module) *Runtime {
 	exporter := builtinimpl.NewExporter(logger)
-	instance := &Instance{
+	rt := &Runtime{
 		logger:   logger,
 		handlers: make(map[uint64]types.Handler),
 		mod:      mod,
 		exporter: exporter,
 	}
-	_ = builtin.UseWorld(instance, exporter)
-	return instance
+	_ = builtin.UseWorld(rt, exporter)
+	return rt
 }
 
-func (instance *Instance) Use(moduleID, methodID uint32, h types.Handler) {
-	instance.handlers[fullID(moduleID, methodID)] = h
+func (rt *Runtime) Use(moduleID, methodID uint32, h types.Handler) {
+	rt.handlers[fullID(moduleID, methodID)] = h
 }
 
-func (instance *Instance) Start() error {
-	err := instance.mod.Start()
+func (rt *Runtime) Start() error {
+	err := rt.mod.Start()
 	if err != nil {
 		return err
 	}
 
-	instance.wg.Add(1)
+	rt.wg.Add(1)
 	go func() {
-		defer instance.wg.Done()
-		err := instance.serverWorker()
+		defer rt.wg.Done()
+		err := rt.serverWorker()
 		if err != nil {
 			// TODO: stop module
-			instance.logger.Error("worker error", slog.String("error", err.Error()))
+			rt.logger.Error("worker error", slog.String("error", err.Error()))
 		}
 	}()
 	return nil
 }
 
-func (instance *Instance) Wait() error {
+func (rt *Runtime) Wait() error {
 	// TODO: any way to terminate instead of waiting?
-	err := instance.mod.Wait()
+	err := rt.mod.Wait()
 	if err != nil {
 		return err
 	}
-	instance.wg.Wait()
+	rt.wg.Wait()
 	return nil
 }
 
-func (instance *Instance) serverWorker() error {
+func (rt *Runtime) serverWorker() error {
 	var err error
-	stream := instance.mod.Stream()
+	stream := rt.mod.Stream()
 	for {
 		rlenBuf := make([]byte, message.LengthSize)
 		_, err = io.ReadFull(stream, rlenBuf)
@@ -89,9 +89,9 @@ func (instance *Instance) serverWorker() error {
 		}
 		dec := message.NewDecoder(req)
 
-		resp := instance.dispatchRequest(dec)
+		resp := rt.dispatchRequest(dec)
 		if !resp.IsOk {
-			instance.logger.Error("method error", slog.String("error", resp.Err.Error()))
+			rt.logger.Error("method error", slog.String("error", resp.Err.Error()))
 		}
 		enc := message.NewEncoder()
 		err = resp.MarshalELRPC(enc)
@@ -116,7 +116,7 @@ func (instance *Instance) serverWorker() error {
 	}
 }
 
-func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[message.Message, *message.Error] {
+func (rt *Runtime) dispatchRequest(dec *message.Decoder) *message.Result[message.Message, *message.Error] {
 	type Resp = message.Result[message.Message, *message.Error]
 	modID, err := dec.DecodeUint32()
 	if err != nil {
@@ -141,7 +141,7 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 		}
 	}
 	fullMethodID := fullID(modID, methodID)
-	handler, ok := instance.handlers[fullMethodID]
+	handler, ok := rt.handlers[fullMethodID]
 	if !ok {
 		return &Resp{
 			IsOk: false,
@@ -170,8 +170,8 @@ func (instance *Instance) dispatchRequest(dec *message.Decoder) *message.Result[
 	return &Resp{IsOk: true, Ok: resp}
 }
 
-func (instance *Instance) Call(moduleID, methodID uint32, args *message.Any) (*message.Any, error) {
-	ch := instance.exporter.CallAsync(&builtin.MethodCall{
+func (rt *Runtime) Call(moduleID, methodID uint32, args *message.Any) (*message.Any, error) {
+	ch := rt.exporter.CallAsync(&builtin.MethodCall{
 		ModuleID: moduleID,
 		MethodID: methodID,
 		Args:     args,

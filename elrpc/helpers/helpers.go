@@ -133,7 +133,7 @@ func (h TypedHandler5[T1, T2, T3, T4, T5, R]) HandleRequest(dec *message.Decoder
 }
 
 type methodCaller struct {
-	instance types.Instance
+	rt types.Runtime
 	moduleID uint32
 	methodID uint32
 }
@@ -142,10 +142,10 @@ type MethodCaller0[R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller0[R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller0[R] {
+func NewMethodCaller0[R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller0[R] {
 	return &MethodCaller0[R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -154,7 +154,7 @@ func NewMethodCaller0[R message.Message](instance types.Instance, moduleID, meth
 
 func (c *MethodCaller0[R]) Call() (R, error) {
 	var zero R
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{})
 	if err != nil {
 		return zero, err
 	}
@@ -172,10 +172,10 @@ type MethodCaller1[T1, R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller1[T1, R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller1[T1, R] {
+func NewMethodCaller1[T1, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller1[T1, R] {
 	return &MethodCaller1[T1, R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -190,7 +190,7 @@ func (c *MethodCaller1[T1, R]) Call(x1 T1) (R, error) {
 		return zero, err
 	}
 
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}
@@ -208,10 +208,10 @@ type MethodCaller2[T1, T2, R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller2[T1, T2, R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller2[T1, T2, R] {
+func NewMethodCaller2[T1, T2, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller2[T1, T2, R] {
 	return &MethodCaller2[T1, T2, R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -230,7 +230,7 @@ func (c *MethodCaller2[T1, T2, R]) Call(x1 T1, x2 T2) (R, error) {
 		return zero, err
 	}
 
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}
@@ -248,10 +248,10 @@ type MethodCaller3[T1, T2, T3, R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller3[T1, T2, T3, R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller3[T1, T2, T3, R] {
+func NewMethodCaller3[T1, T2, T3, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller3[T1, T2, T3, R] {
 	return &MethodCaller3[T1, T2, T3, R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -274,7 +274,7 @@ func (c *MethodCaller3[T1, T2, T3, R]) Call(x1 T1, x2 T2, x3 T3) (R, error) {
 		return zero, err
 	}
 
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}
@@ -292,10 +292,10 @@ type MethodCaller4[T1, T2, T3, T4, R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller4[T1, T2, T3, T4, R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller4[T1, T2, T3, T4, R] {
+func NewMethodCaller4[T1, T2, T3, T4, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller4[T1, T2, T3, T4, R] {
 	return &MethodCaller4[T1, T2, T3, T4, R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -322,7 +322,7 @@ func (c *MethodCaller4[T1, T2, T3, T4, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4) (R, 
 		return zero, err
 	}
 
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}
@@ -340,10 +340,10 @@ type MethodCaller5[T1, T2, T3, T4, T5, R message.Message] struct {
 	methodCaller
 }
 
-func NewMethodCaller5[T1, T2, T3, T4, T5, R message.Message](instance types.Instance, moduleID, methodID uint32) *MethodCaller5[T1, T2, T3, T4, T5, R] {
+func NewMethodCaller5[T1, T2, T3, T4, T5, R message.Message](rt types.Runtime, moduleID, methodID uint32) *MethodCaller5[T1, T2, T3, T4, T5, R] {
 	return &MethodCaller5[T1, T2, T3, T4, T5, R]{
 		methodCaller: methodCaller{
-			instance: instance,
+			rt: rt,
 			moduleID: moduleID,
 			methodID: methodID,
 		},
@@ -374,7 +374,7 @@ func (c *MethodCaller5[T1, T2, T3, T4, T5, R]) Call(x1 T1, x2 T2, x3 T3, x4 T4, 
 		return zero, err
 	}
 
-	rawResp, err := c.instance.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
+	rawResp, err := c.rt.Call(c.moduleID, c.methodID, &message.Any{Raw: enc.Buffer()})
 	if err != nil {
 		return zero, err
 	}

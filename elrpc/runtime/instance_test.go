@@ -32,8 +32,8 @@ type HostAPI interface {
 	Ping(*message.String) (*message.String, error)
 }
 
-func ImportHostAPI(instance types.Instance, h HostAPI) {
-	instance.Use(ModuleID, MethodID_HostAPI_Ping, helpers.TypedHandler1[*message.String, *message.String](h.Ping))
+func ImportHostAPI(rt types.Runtime, h HostAPI) {
+	rt.Use(ModuleID, MethodID_HostAPI_Ping, helpers.TypedHandler1[*message.String, *message.String](h.Ping))
 }
 
 type hostAPIImpl struct {
@@ -52,9 +52,9 @@ type guestAPIImpl struct {
 	pingImpl *helpers.MethodCaller1[*message.String, *message.String]
 }
 
-func ExportGuestAPI(instance types.Instance) GuestAPI {
+func ExportGuestAPI(rt types.Runtime) GuestAPI {
 	return &guestAPIImpl{
-		pingImpl: helpers.NewMethodCaller1[*message.String, *message.String](instance, ModuleID, MethodID_GuestAPI_Ping),
+		pingImpl: helpers.NewMethodCaller1[*message.String, *message.String](rt, ModuleID, MethodID_GuestAPI_Ping),
 	}
 }
 
@@ -146,9 +146,9 @@ func TestInstance_callHostAPI(t *testing.T) {
 			mod := elrpctest.NewTestModule(t)
 			defer mod.Close()
 
-			instance := runtime.NewInstance(logger, mod)
-			ImportHostAPI(instance, hostImpl)
-			err := instance.Start()
+			rt := runtime.NewRuntime(logger, mod)
+			ImportHostAPI(rt, hostImpl)
+			err := rt.Start()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -183,9 +183,9 @@ func TestInstance_callGuestAPI(t *testing.T) {
 	mod := elrpctest.NewTestModule(t)
 	defer mod.Close()
 
-	instance := runtime.NewInstance(logger, mod)
-	guestAPI := ExportGuestAPI(instance)
-	err := instance.Start()
+	rt := runtime.NewRuntime(logger, mod)
+	guestAPI := ExportGuestAPI(rt)
+	err := rt.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
