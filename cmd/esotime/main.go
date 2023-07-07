@@ -49,6 +49,13 @@ func main() {
 	file := expimpl.NewFile(hs)
 	exp.ImportFile(rt, file)
 
+	http := expimpl.NewHTTP(logger, hs, map[string]expimpl.HttpListenerConfig{
+		"default": {
+			AddrAndPort: ":8080",
+		},
+	})
+	exp.ImportHTTP(rt, http)
+
 	// TODO: use UseWorld
 
 	err := rt.Start()

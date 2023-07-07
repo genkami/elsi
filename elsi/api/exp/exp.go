@@ -186,7 +186,7 @@ func (r *ServerResponseHeader) ZeroMessage() message.Message {
 }
 
 type HTTP interface {
-	Listen(addrAndPort *message.String) (*Handle, error)
+	Listen(name *message.String) (*Handle, error)
 	PollRequest(handle *Handle) (*ServerRequest, error)
 	SendResponseHeader(handle *Handle, reqID *message.Uint64, header *ServerResponseHeader) (*Handle, error)
 }

@@ -11,9 +11,21 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type HTTPListenerCtor = func(addrAndPort string) (net.Listener, error)
+
+func TCPListenerCtor(addrAndPort string) (net.Listener, error) {
+	return net.Listen("tcp", addrAndPort)
+}
+
 type HTTP struct {
-	logger *slog.Logger
-	hs     *HandleSet
+	logger           *slog.Logger
+	hs               *HandleSet
+	allowedListeners map[string]HttpListenerConfig
+}
+
+type HttpListenerConfig struct {
+	Ctor        HTTPListenerCtor
+	AddrAndPort string
 }
 
 type httpListener struct {
@@ -43,21 +55,28 @@ type httpWaiter struct {
 
 var _ exp.HTTP = (*HTTP)(nil)
 
-func NewHTTP(logger *slog.Logger, hs *HandleSet) *HTTP {
+func NewHTTP(logger *slog.Logger, hs *HandleSet, allowedListeners map[string]HttpListenerConfig) *HTTP {
 	return &HTTP{
 		logger: logger,
 		hs:     hs,
 	}
 }
 
-func (h *HTTP) Listen(addrAndPort *message.String) (*exp.Handle, error) {
-	// TODO: restrict access
-	lis, err := net.Listen("tcp", addrAndPort.Value)
+func (h *HTTP) Listen(name *message.String) (*exp.Handle, error) {
+	conf, ok := h.allowedListeners[name.Value]
+	if !ok {
+		return nil, errNoSuchHandle
+	}
+	ctor := conf.Ctor
+	if ctor == nil {
+		ctor = TCPListenerCtor
+	}
+	lis, err := ctor(conf.AddrAndPort)
 	if err != nil {
 		// TODO: convert to ELRPC error
 		return nil, err
 	}
-	logger := h.logger.With(slog.String("addr", addrAndPort.Value))
+	logger := h.logger.With(slog.String("listener_name", name.Value), slog.String("addr", conf.AddrAndPort))
 	listener := &httpListener{
 		logger: logger,
 		hs:     h.hs,
